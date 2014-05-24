@@ -27,7 +27,7 @@ const (
 	ConstNameAndType                     = 12
 	ConstMethodHandle                    = 15
 	ConstMethodType                      = 16
-	ConstInvokeDynamik                   = 18
+	ConstInvokeDynamic                   = 18
 )
 
 func Parse(r io.Reader) (*ClassFile, error) {
@@ -86,9 +86,38 @@ func (c *ClassFile) readConstInfo(r io.Reader) (*ConstInfo, error) {
 		return nil, err
 	}
 
+	bytesToRead := uint16(0)
 	switch info.Tag {
-	case ConstClass:
-		panic("hello!")
+	case ConstClass, ConstString, ConstMethodType:
+		bytesToRead = 2
+
+	case ConstMethodHandle:
+		bytesToRead = 3
+
+	case ConstFieldRef, ConstMethodRef,
+		ConstInterfaceMehtodRef, ConstInteger,
+		ConstFloat, ConstNameAndType, ConstInvokeDynamic:
+		bytesToRead = 4
+
+	case ConstLong, ConstDouble:
+		bytesToRead = 8
+
+	case ConstUTF8:
+		err = binary.Read(r, byteOrder, &bytesToRead)
+		if err != nil {
+			return nil, err
+		}
+
+	default:
+		panic("unknown tag in class file!")
 	}
-	return nil, nil
+
+	info.Info = make([]uint8, bytesToRead)
+
+	err = binary.Read(r, byteOrder, &info.Info)
+	if err != nil {
+		return nil, err
+	}
+
+	return info, nil
 }
