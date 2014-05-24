@@ -8,9 +8,12 @@ type ClassFile struct {
 
 	ConstPoolSize uint16
 	ConstPool     []*ConstInfo
+
+	AccessFlags uint16
 }
 
 type ConstInfoTag uint8
+type AccessFlag uint16
 
 type ConstInfo struct {
 	Tag  ConstInfoTag

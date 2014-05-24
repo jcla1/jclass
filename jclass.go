@@ -11,6 +11,7 @@ var initFuncs = []func(*ClassFile, io.Reader) error{
 	(*ClassFile).readMagic,
 	(*ClassFile).readVersion,
 	(*ClassFile).readConstPool,
+	(*ClassFile).readAccessFlags,
 }
 
 const (
@@ -28,6 +29,17 @@ const (
 	ConstMethodHandle                    = 15
 	ConstMethodType                      = 16
 	ConstInvokeDynamic                   = 18
+)
+
+const (
+	AccPublic     AccessFlag = 0x0001
+	AccFinal                 = 0x0010
+	AccSuper                 = 0x0020
+	AccInterface             = 0x0200
+	AccAbstract              = 0x0400
+	AccSynthetic             = 0x1000
+	AccAnnotation            = 0x2000
+	AccEnum                  = 0x4000
 )
 
 func Parse(r io.Reader) (*ClassFile, error) {
@@ -120,4 +132,8 @@ func (c *ClassFile) readConstInfo(r io.Reader) (*ConstInfo, error) {
 	}
 
 	return info, nil
+}
+
+func (c *ClassFile) readAccessFlags(r io.Reader) error {
+	return binary.Read(r, byteOrder, c.AccessFlags)
 }
