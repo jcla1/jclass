@@ -15,6 +15,8 @@ var initFuncs = []func(*ClassFile, io.Reader) error{
 	(*ClassFile).readThisClass,
 	(*ClassFile).readSuperClass,
 	(*ClassFile).readInterfaces,
+	(*ClassFile).readFields,
+	(*ClassFile).readAttributes,
 }
 
 const (
@@ -167,5 +169,30 @@ func (c *ClassFile) readInterfaces(r io.Reader) error {
 		c.Interfaces = append(c.Interfaces, interf)
 	}
 
+	return nil
+}
+
+func (c *ClassFile) readFields(r io.Reader) error {
+	err := binary.Read(r, byteOrder, &c.FieldsCount)
+	if err != nil {
+		return err
+	}
+
+	c.Fields = make([]*FieldInfo, 0, c.FieldsCount)
+
+	var field FieldInfo
+	for i := uint16(0); i < c.FieldsCount; i++ {
+		err = binary.Read(r, byteOrder, &field)
+		if err != nil {
+			return err
+		}
+
+		c.Fields = append(c.Fields, &field)
+	}
+
+	return nil
+}
+
+func (c *ClassFile) readAttributes(r io.Reader) error {
 	return nil
 }
