@@ -2,6 +2,7 @@ package class
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
@@ -78,27 +79,28 @@ func (c *ClassFile) readConstInfo(r io.Reader) (*ConstInfo, error) {
 
 	bytesToRead := uint16(0)
 	switch info.Tag {
-	case ConstClass, ConstString, ConstMethodType:
+	case CONSTANT_Class, CONSTANT_String, CONSTANT_MethodType:
 		bytesToRead = 2
 
-	case ConstMethodHandle:
+	case CONSTANT_MethodHandle:
 		bytesToRead = 3
 
-	case ConstFieldRef, ConstMethodRef,
-		ConstInterfaceMehtodRef, ConstInteger,
-		ConstFloat, ConstNameAndType, ConstInvokeDynamic:
+	case CONSTANT_FieldRef, CONSTANT_MethodRef,
+		CONSTANT_InterfaceMethodRef, CONSTANT_Integer,
+		CONSTANT_Float, CONSTANT_NameAndType, CONSTANT_InvokeDynamic:
 		bytesToRead = 4
 
-	case ConstLong, ConstDouble:
+	case CONSTANT_Long, CONSTANT_Double:
 		bytesToRead = 8
 
-	case ConstUTF8:
+	case CONSTANT_UTF8:
 		err = binary.Read(r, byteOrder, &bytesToRead)
 		if err != nil {
 			return nil, err
 		}
 
 	default:
+		fmt.Println(info.Tag)
 		panic("unknown tag in class file!")
 	}
 

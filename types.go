@@ -1,33 +1,5 @@
 package class
 
-const (
-	ConstUTF8               ConstInfoTag = 1
-	ConstInteger                         = 3
-	ConstFloat                           = 4
-	ConstLong                            = 5
-	ConstDouble                          = 6
-	ConstClass                           = 7
-	ConstString                          = 8
-	ConstFieldRef                        = 9
-	ConstMethodRef                       = 10
-	ConstInterfaceMehtodRef              = 11
-	ConstNameAndType                     = 12
-	ConstMethodHandle                    = 15
-	ConstMethodType                      = 16
-	ConstInvokeDynamic                   = 18
-)
-
-const (
-	AccPublic     AccessFlag = 0x0001
-	AccFinal                 = 0x0010
-	AccSuper                 = 0x0020
-	AccInterface             = 0x0200
-	AccAbstract              = 0x0400
-	AccSynthetic             = 0x1000
-	AccAnnotation            = 0x2000
-	AccEnum                  = 0x4000
-)
-
 type ClassFile struct {
 	Magic uint32
 
