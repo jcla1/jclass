@@ -223,10 +223,10 @@ func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 	fom := &fieldOrMethodInfo{}
 
 	errs := []error{
-		binary.Read(r, byteOrder, fom.AccessFlags),
-		binary.Read(r, byteOrder, fom.NameIndex),
-		binary.Read(r, byteOrder, fom.DescriptorIndex),
-		binary.Read(r, byteOrder, fom.AttributesCount),
+		binary.Read(r, byteOrder, &fom.AccessFlags),
+		binary.Read(r, byteOrder, &fom.NameIndex),
+		binary.Read(r, byteOrder, &fom.DescriptorIndex),
+		binary.Read(r, byteOrder, &fom.AttributesCount),
 	}
 
 	for _, err := range errs {
@@ -250,6 +250,23 @@ func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 }
 
 func (c *ClassFile) readAttributes(r io.Reader) error {
+	err := binary.Read(r, byteOrder, &c.AttributesCount)
+	if err != nil {
+		return err
+	}
+
+	c.Attributes = make([]*AttributeInfo, 0, c.AttributesCount)
+
+	var attr *AttributeInfo
+	for i := uint16(0); i < c.AttributesCount; i++ {
+		attr, err = c.readAttribute(r)
+		if err != nil {
+			return err
+		}
+
+		c.Attributes = append(c.Attributes, attr)
+	}
+
 	return nil
 }
 

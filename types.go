@@ -21,6 +21,9 @@ type ClassFile struct {
 
 	MethodsCount uint16
 	Methods      []*MethodInfo
+
+	AttributesCount uint16
+	Attributes      []*AttributeInfo
 }
 
 type ConstInfoTag uint8
