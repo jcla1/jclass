@@ -12,6 +12,8 @@ var initFuncs = []func(*ClassFile, io.Reader) error{
 	(*ClassFile).readVersion,
 	(*ClassFile).readConstPool,
 	(*ClassFile).readAccessFlags,
+	(*ClassFile).readThisClass,
+	(*ClassFile).readSuperClass,
 }
 
 const (
@@ -136,4 +138,12 @@ func (c *ClassFile) readConstInfo(r io.Reader) (*ConstInfo, error) {
 
 func (c *ClassFile) readAccessFlags(r io.Reader) error {
 	return binary.Read(r, byteOrder, c.AccessFlags)
+}
+
+func (c *ClassFile) readThisClass(r io.Reader) error {
+	return binary.Read(r, byteOrder, c.ThisClass)
+}
+
+func (c *ClassFile) readSuperClass(r io.Reader) error {
+	return binary.Read(r, byteOrder, c.SuperClass)
 }

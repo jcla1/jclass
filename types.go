@@ -10,6 +10,8 @@ type ClassFile struct {
 	ConstPool     []*ConstInfo
 
 	AccessFlags uint16
+	ThisClass   uint16
+	SuperClass  uint16
 }
 
 type ConstInfoTag uint8
