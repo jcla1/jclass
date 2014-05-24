@@ -14,6 +14,7 @@ var initFuncs = []func(*ClassFile, io.Reader) error{
 	(*ClassFile).readAccessFlags,
 	(*ClassFile).readThisClass,
 	(*ClassFile).readSuperClass,
+	(*ClassFile).readInterfaces,
 }
 
 const (
@@ -137,13 +138,34 @@ func (c *ClassFile) readConstInfo(r io.Reader) (*ConstInfo, error) {
 }
 
 func (c *ClassFile) readAccessFlags(r io.Reader) error {
-	return binary.Read(r, byteOrder, c.AccessFlags)
+	return binary.Read(r, byteOrder, &c.AccessFlags)
 }
 
 func (c *ClassFile) readThisClass(r io.Reader) error {
-	return binary.Read(r, byteOrder, c.ThisClass)
+	return binary.Read(r, byteOrder, &c.ThisClass)
 }
 
 func (c *ClassFile) readSuperClass(r io.Reader) error {
-	return binary.Read(r, byteOrder, c.SuperClass)
+	return binary.Read(r, byteOrder, &c.SuperClass)
+}
+
+func (c *ClassFile) readInterfaces(r io.Reader) error {
+	err := binary.Read(r, byteOrder, &c.InterfacesCount)
+	if err != nil {
+		return err
+	}
+
+	c.Interfaces = make([]uint16, 0, c.InterfacesCount)
+
+	var interf uint16
+	for i := uint16(0); i < c.InterfacesCount; i++ {
+		err = binary.Read(r, byteOrder, &interf)
+		if err != nil {
+			return err
+		}
+
+		c.Interfaces = append(c.Interfaces, interf)
+	}
+
+	return nil
 }

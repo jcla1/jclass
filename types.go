@@ -12,6 +12,9 @@ type ClassFile struct {
 	AccessFlags uint16
 	ThisClass   uint16
 	SuperClass  uint16
+
+	InterfacesCount uint16
+	Interfaces      []uint16
 }
 
 type ConstInfoTag uint8
