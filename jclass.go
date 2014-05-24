@@ -63,6 +63,21 @@ func (c *ClassFile) readConstPool(r io.Reader) error {
 			return err
 		}
 
+		// This is one of the WORST! bugs ever!
+		// They even admit it in the JVM spec:
+		//
+		// "In retrospect, making 8-byte constants
+		// take two constant pool entries was a poor choice."
+		//
+		// The problem is, that both longs & doubles
+		// take up TWO!! slots in the const pool (an it
+		// looks like they take 2 in the local variable
+		// pool too). That's why we need to advance an
+		// extra slot, iff we encounter one of them
+		if info.Tag == CONSTANT_Long || info.Tag == CONSTANT_Double {
+			i += 1
+		}
+
 		c.ConstPool = append(c.ConstPool, info)
 	}
 
@@ -100,7 +115,6 @@ func (c *ClassFile) readConstInfo(r io.Reader) (*ConstInfo, error) {
 		}
 
 	default:
-		fmt.Println(info.Tag)
 		panic("unknown tag in class file!")
 	}
 
