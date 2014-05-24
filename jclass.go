@@ -271,5 +271,25 @@ func (c *ClassFile) readAttributes(r io.Reader) error {
 }
 
 func (c *ClassFile) readAttribute(r io.Reader) (*AttributeInfo, error) {
-	return nil, nil
+	attr := &AttributeInfo{}
+
+	errs := []error{
+		binary.Read(r, byteOrder, &attr.NameIndex),
+		binary.Read(r, byteOrder, &attr.Length),
+	}
+
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	attr.Info = make([]uint8, attr.Length)
+
+	err := binary.Read(r, byteOrder, &attr.Info)
+	if err != nil {
+		return nil, err
+	}
+
+	return attr, nil
 }
