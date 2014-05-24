@@ -16,6 +16,7 @@ var initFuncs = []func(*ClassFile, io.Reader) error{
 	(*ClassFile).readSuperClass,
 	(*ClassFile).readInterfaces,
 	(*ClassFile).readFields,
+	(*ClassFile).readMethods,
 	(*ClassFile).readAttributes,
 }
 
@@ -157,16 +158,16 @@ func (c *ClassFile) readInterfaces(r io.Reader) error {
 		return err
 	}
 
-	c.Interfaces = make([]uint16, 0, c.InterfacesCount)
+	c.Interfaces = make([]ConstPoolIndex, 0, c.InterfacesCount)
 
-	var interf uint16
+	var idx ConstPoolIndex
 	for i := uint16(0); i < c.InterfacesCount; i++ {
-		err = binary.Read(r, byteOrder, &interf)
+		err = binary.Read(r, byteOrder, &idx)
 		if err != nil {
 			return err
 		}
 
-		c.Interfaces = append(c.Interfaces, interf)
+		c.Interfaces = append(c.Interfaces, idx)
 	}
 
 	return nil
@@ -181,18 +182,77 @@ func (c *ClassFile) readFields(r io.Reader) error {
 	c.Fields = make([]*FieldInfo, 0, c.FieldsCount)
 
 	var field FieldInfo
+	var fieldOrMethod *fieldOrMethodInfo
 	for i := uint16(0); i < c.FieldsCount; i++ {
-		err = binary.Read(r, byteOrder, &field)
+		fieldOrMethod, err = c.readFieldOrMethod(r)
 		if err != nil {
 			return err
 		}
 
+		field = FieldInfo(*fieldOrMethod)
 		c.Fields = append(c.Fields, &field)
 	}
 
 	return nil
 }
 
+func (c *ClassFile) readMethods(r io.Reader) error {
+	err := binary.Read(r, byteOrder, &c.MethodsCount)
+	if err != nil {
+		return err
+	}
+
+	c.Methods = make([]*MethodInfo, 0, c.MethodsCount)
+
+	var method MethodInfo
+	var fieldOrMethod *fieldOrMethodInfo
+	for i := uint16(0); i < c.MethodsCount; i++ {
+		fieldOrMethod, err = c.readFieldOrMethod(r)
+		if err != nil {
+			return err
+		}
+
+		method = MethodInfo(*fieldOrMethod)
+		c.Methods = append(c.Methods, &method)
+	}
+
+	return nil
+}
+
+func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
+	fom := &fieldOrMethodInfo{}
+
+	errs := []error{
+		binary.Read(r, byteOrder, fom.AccessFlags),
+		binary.Read(r, byteOrder, fom.NameIndex),
+		binary.Read(r, byteOrder, fom.DescriptorIndex),
+		binary.Read(r, byteOrder, fom.AttributesCount),
+	}
+
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	fom.Attributes = make([]*AttributeInfo, 0, fom.AttributesCount)
+
+	for i := uint16(0); i < fom.AttributesCount; i++ {
+		attr, err := c.readAttribute(r)
+		if err != nil {
+			return nil, err
+		}
+
+		fom.Attributes = append(fom.Attributes, attr)
+	}
+
+	return fom, nil
+}
+
 func (c *ClassFile) readAttributes(r io.Reader) error {
 	return nil
+}
+
+func (c *ClassFile) readAttribute(r io.Reader) (*AttributeInfo, error) {
+	return nil, nil
 }
