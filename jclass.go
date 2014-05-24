@@ -155,16 +155,20 @@ func (c *ClassFile) readFields(r io.Reader) error {
 
 	c.Fields = make([]*FieldInfo, 0, c.FieldsCount)
 
-	var field FieldInfo
-	var fieldOrMethod *fieldOrMethodInfo
 	for i := uint16(0); i < c.FieldsCount; i++ {
-		fieldOrMethod, err = c.readFieldOrMethod(r)
+		var access FieldAccessFlag
+		err := binary.Read(r, byteOrder, &access)
 		if err != nil {
 			return err
 		}
 
-		field = FieldInfo(*fieldOrMethod)
-		c.Fields = append(c.Fields, &field)
+		fieldOrMethod, err := c.readFieldOrMethod(r)
+		if err != nil {
+			return err
+		}
+
+		field := &FieldInfo{access, *fieldOrMethod}
+		c.Fields = append(c.Fields, field)
 	}
 
 	return nil
@@ -178,16 +182,20 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 
 	c.Methods = make([]*MethodInfo, 0, c.MethodsCount)
 
-	var method MethodInfo
-	var fieldOrMethod *fieldOrMethodInfo
 	for i := uint16(0); i < c.MethodsCount; i++ {
-		fieldOrMethod, err = c.readFieldOrMethod(r)
+		var access MethodAccessFlag
+		err := binary.Read(r, byteOrder, &access)
 		if err != nil {
 			return err
 		}
 
-		method = MethodInfo(*fieldOrMethod)
-		c.Methods = append(c.Methods, &method)
+		fieldOrMethod, err := c.readFieldOrMethod(r)
+		if err != nil {
+			return err
+		}
+
+		method := &MethodInfo{access, *fieldOrMethod}
+		c.Methods = append(c.Methods, method)
 	}
 
 	return nil
@@ -197,7 +205,6 @@ func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 	fom := &fieldOrMethodInfo{}
 
 	errs := []error{
-		binary.Read(r, byteOrder, &fom.AccessFlags),
 		binary.Read(r, byteOrder, &fom.NameIndex),
 		binary.Read(r, byteOrder, &fom.DescriptorIndex),
 		binary.Read(r, byteOrder, &fom.AttributesCount),

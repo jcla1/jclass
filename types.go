@@ -9,7 +9,7 @@ type ClassFile struct {
 	ConstPoolSize uint16
 	ConstPool     []*ConstInfo
 
-	AccessFlags AccessFlag
+	AccessFlags ClassAccessFlag
 	ThisClass   ConstPoolIndex
 	SuperClass  ConstPoolIndex
 
@@ -26,24 +26,33 @@ type ClassFile struct {
 	Attributes      []*AttributeInfo
 }
 
-type ConstInfoTag uint8
-type ConstPoolIndex uint16
-type AccessFlag uint16
+type ClassAccessFlag uint16
+type NestedClassAccessFlag uint16
+type FieldAccessFlag uint16
+type MethodAccessFlag uint16
 
-type FieldInfo fieldOrMethodInfo
-type MethodInfo fieldOrMethodInfo
-
-type ConstInfo struct {
-	Tag  ConstInfoTag
-	Info []uint8
+type FieldInfo struct {
+	AccessFlags FieldAccessFlag
+	fieldOrMethodInfo
+}
+type MethodInfo struct {
+	AccessFlags MethodAccessFlag
+	fieldOrMethodInfo
 }
 
 type fieldOrMethodInfo struct {
-	AccessFlags     AccessFlag
 	NameIndex       ConstPoolIndex
 	DescriptorIndex ConstPoolIndex
 	AttributesCount uint16
 	Attributes      []*AttributeInfo
+}
+
+type ConstInfoTag uint8
+type ConstPoolIndex uint16
+
+type ConstInfo struct {
+	Tag  ConstInfoTag
+	Info []uint8
 }
 
 type AttributeInfo struct {
