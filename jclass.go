@@ -76,7 +76,7 @@ func (c *ClassFile) readConstPool(r io.Reader) error {
 		// pool too). That's why we need to advance an
 		// extra slot, iff we encounter one of them
 		if info.Tag == CONSTANT_Long || info.Tag == CONSTANT_Double {
-			i += 1
+			i++
 		}
 
 		c.ConstPool = append(c.ConstPool, info)

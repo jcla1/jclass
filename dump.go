@@ -18,6 +18,11 @@ var dumpFuncs = []func(*ClassFile, io.Writer) error{
 	(*ClassFile).writeAttributes,
 }
 
+// Dump writes the binary representation of the
+// ClassFile struct to the provied io.Writer
+// When a class file is parsed and then dumped
+// (unmodified), both (files) should be exactly
+// the same.
 func (c *ClassFile) Dump(w io.Writer) error {
 	var err error
 
