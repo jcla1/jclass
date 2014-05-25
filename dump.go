@@ -86,3 +86,11 @@ func (c *ClassFile) writeConstInfo(w io.Writer, info *ConstInfo) error {
 func (c *ClassFile) writeAccessFlags(w io.Writer) error {
 	return binary.Write(w, byteOrder, c.AccessFlags)
 }
+
+func (c *ClassFile) writeThisClass(w io.Writer) error {
+	return binary.Write(w, byteOrder, c.ThisClass)
+}
+
+func (c *ClassFile) writeSuperClass(w io.Writer) error {
+	return binary.Write(w, byteOrder, c.SuperClass)
+}
