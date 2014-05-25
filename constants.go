@@ -1,5 +1,10 @@
 package class
 
+// These constants represent the possible (valid)
+// values for the tag attribute in a constant pool
+// entry. Based on this tag, the structure of the
+// following bytes can be determined.
+// http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.4-140
 const (
 	CONSTANT_UTF8               ConstInfoTag = 1
 	CONSTANT_Integer                         = 3
@@ -17,6 +22,9 @@ const (
 	CONSTANT_InvokeDynamic                   = 18
 )
 
+// These constants describe access flags that can
+// be applied to a whole class or interface.
+// http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.1-200-E.1
 const (
 	CLASS_ACC_PUBLIC     ClassAccessFlag = 0x0001 // Declared public; may be accessed from outside its package.
 	CLASS_ACC_FINAL                      = 0x0010 // Declared final; no subclasses allowed.
@@ -28,6 +36,9 @@ const (
 	CLASS_ACC_ENUM                       = 0x4000 // Declared as an enum type.
 )
 
+// These constant define access flags and attributes
+// of a field in a class or interface.
+// http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.5-200-A.1
 const (
 	FIELD_ACC_PUBLIC    FieldAccessFlag = 0x0001 // Declared public; may be accessed from outside its package.
 	FIELD_ACC_PRIVATE                   = 0x0002 // Declared private; usable only within the defining class.
@@ -40,6 +51,9 @@ const (
 	FIELD_ACC_ENUM                      = 0x4000 // Declared as an element of an enum.
 )
 
+// These constants describe access flags and properties
+// of methods in a class or interface.
+// http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.6-200-A.1
 const (
 	METHOD_ACC_PUBLIC       MethodAccessFlag = 0x0001 // Declared public; may be accessed from outside its package.
 	METHOD_ACC_PRIVATE                       = 0x0002 // Declared private; accessible only within the defining class.
@@ -55,6 +69,9 @@ const (
 	METHOD_ACC_SYNTHETIC                     = 0x1000 // Declared synthetic; not present in the source code.
 )
 
+// These constants define valid access flags and properties
+// for inner classes of a class or interface.
+// http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.6-300-D.2-5
 const (
 	NESTED_CLASS_ACC_PUBLIC     NestedClassAccessFlag = 0x0001 // Marked or implicitly public in source.
 	NESTED_CLASS_ACC_PRIVATE                          = 0x0002 // Marked private in source.
