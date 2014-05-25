@@ -127,6 +127,29 @@ func (c *ClassFile) writeFields(w io.Writer) error {
 	return nil
 }
 
+func (c *ClassFile) writeMethods(w io.Writer) error {
+	var err error
+
+	err = binary.Write(w, byteOrder, c.MethodsCount)
+	if err != nil {
+		return err
+	}
+
+	for _, method := range c.Methods {
+		err = binary.Write(w, byteOrder, method.AccessFlags)
+		if err != nil {
+			return err
+		}
+
+		err = writeFieldOrMethodInfo(w, method.fieldOrMethodInfo)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func writeFieldOrMethodInfo(w io.Writer, fom fieldOrMethodInfo) error {
 	errs := []error{
 		binary.Write(w, byteOrder, fom.NameIndex),
