@@ -2,7 +2,6 @@ package class
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
 )
 
