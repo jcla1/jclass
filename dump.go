@@ -14,8 +14,8 @@ var dumpFuncs = []func(*ClassFile, io.Writer) error{
 	(*ClassFile).writeSuperClass,
 	(*ClassFile).writeInterfaces,
 	(*ClassFile).writeFields,
-	// (*ClassFile).writeMethods,
-	// (*ClassFile).writeAttributes,
+	(*ClassFile).writeMethods,
+	(*ClassFile).writeAttributes,
 }
 
 func (c *ClassFile) Dump(w io.Writer) error {
@@ -154,6 +154,7 @@ func writeFieldOrMethodInfo(w io.Writer, fom fieldOrMethodInfo) error {
 	errs := []error{
 		binary.Write(w, byteOrder, fom.NameIndex),
 		binary.Write(w, byteOrder, fom.DescriptorIndex),
+		binary.Write(w, byteOrder, fom.AttributesCount),
 	}
 
 	for _, err := range errs {
@@ -164,6 +165,24 @@ func writeFieldOrMethodInfo(w io.Writer, fom fieldOrMethodInfo) error {
 
 	for _, attr := range fom.Attributes {
 		err := writeAttribute(w, attr)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *ClassFile) writeAttributes(w io.Writer) error {
+	var err error
+
+	err = binary.Write(w, byteOrder, c.AttributesCount)
+	if err != nil {
+		return err
+	}
+
+	for _, attr := range c.Attributes {
+		err = writeAttribute(w, attr)
 		if err != nil {
 			return err
 		}
