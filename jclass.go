@@ -21,6 +21,8 @@ var initFuncs = []func(*ClassFile, io.Reader) error{
 	(*ClassFile).readAttributes,
 }
 
+// Parse reads a Java class file from r and, on success,
+// returns the parsed struct. Otherwise nil and the error.
 func Parse(r io.Reader) (*ClassFile, error) {
 	c := &ClassFile{}
 
