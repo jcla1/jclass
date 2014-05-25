@@ -8,8 +8,8 @@ import (
 var dumpFuncs = []func(*ClassFile, io.Writer) error{
 	(*ClassFile).writeMagic,
 	(*ClassFile).writeVersion,
-	// (*ClassFile).writeConstPool,
-	// (*ClassFile).writeAccessFlags,
+	(*ClassFile).writeConstPool,
+	(*ClassFile).writeAccessFlags,
 	// (*ClassFile).writeThisClass,
 	// (*ClassFile).writeSuperClass,
 	// (*ClassFile).writeInterfaces,
@@ -51,11 +51,38 @@ func (c *ClassFile) writeConstPool(w io.Writer) error {
 	}
 
 	for _, constant := range c.ConstPool {
-		err := binary.Write(w, byteOrder, constant)
+		err := c.writeConstInfo(w, constant)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (c *ClassFile) writeConstInfo(w io.Writer, info *ConstInfo) error {
+	var err error
+
+	err = binary.Write(w, byteOrder, info.Tag)
+	if err != nil {
+		return err
+	}
+
+	if info.Tag == CONSTANT_UTF8 {
+		err = binary.Write(w, byteOrder, uint16(len(info.Info)))
+		if err != nil {
+			return err
+		}
+	}
+
+	err = binary.Write(w, byteOrder, info.Info)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *ClassFile) writeAccessFlags(w io.Writer) error {
+	return binary.Write(w, byteOrder, c.AccessFlags)
 }
