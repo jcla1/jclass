@@ -177,7 +177,7 @@ func (c *ClassFile) readFields(r io.Reader) error {
 			return err
 		}
 
-		fieldOrMethod, err := c.readFieldOrMethod(r)
+		fieldOrMethod, err := readFieldOrMethod(r)
 		if err != nil {
 			return err
 		}
@@ -204,7 +204,7 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 			return err
 		}
 
-		fieldOrMethod, err := c.readFieldOrMethod(r)
+		fieldOrMethod, err := readFieldOrMethod(r)
 		if err != nil {
 			return err
 		}
@@ -216,7 +216,7 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 	return nil
 }
 
-func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
+func readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 	fom := &fieldOrMethodInfo{}
 
 	errs := []error{
@@ -234,7 +234,7 @@ func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 	fom.Attributes = make([]*AttributeInfo, 0, fom.AttributesCount)
 
 	for i := uint16(0); i < fom.AttributesCount; i++ {
-		attr, err := c.readAttribute(r)
+		attr, err := readAttribute(r)
 		if err != nil {
 			return nil, err
 		}
@@ -255,7 +255,7 @@ func (c *ClassFile) readAttributes(r io.Reader) error {
 
 	var attr *AttributeInfo
 	for i := uint16(0); i < c.AttributesCount; i++ {
-		attr, err = c.readAttribute(r)
+		attr, err = readAttribute(r)
 		if err != nil {
 			return err
 		}
@@ -266,7 +266,7 @@ func (c *ClassFile) readAttributes(r io.Reader) error {
 	return nil
 }
 
-func (c *ClassFile) readAttribute(r io.Reader) (*AttributeInfo, error) {
+func readAttribute(r io.Reader) (*AttributeInfo, error) {
 	attr := &AttributeInfo{}
 
 	errs := []error{
