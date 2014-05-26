@@ -64,7 +64,7 @@ type ClassFile struct {
 	// Attributes describes properties of this class or
 	// interface through attribute_info structs.
 	AttributesCount uint16
-	Attributes
+	Attributes      []*AttributeInfo
 }
 
 type ClassAccessFlag uint16
@@ -85,14 +85,19 @@ type fieldOrMethodInfo struct {
 	NameIndex       ConstPoolIndex
 	DescriptorIndex ConstPoolIndex
 	AttributesCount uint16
-	Attributes
+	Attributes      []*AttributeInfo
 }
 
 type ConstInfoTag uint8
 type ConstPoolIndex uint16
-type ConstantPool []*ConstInfo
 
 type ConstInfo struct {
 	Tag  ConstInfoTag
 	Info []uint8
+}
+
+type AttributeInfo struct {
+	NameIndex ConstPoolIndex
+	Length    uint32
+	Info      []uint8
 }
