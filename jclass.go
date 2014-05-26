@@ -42,21 +42,91 @@ func (c *ClassFile) readMagic(r io.Reader) error {
 }
 
 func (c *ClassFile) readVersion(r io.Reader) error {
-	return multiError([]error{
-		binary.Read(r, byteOrder, &c.MinorVersion),
-		binary.Read(r, byteOrder, &c.MajorVersion),
-	})
-}
-
-func (c *ClassFile) readConstPool(r io.Reader) error {
-	count, err := c.ConstantPool.read(r)
+	err := binary.Read(r, byteOrder, &c.MinorVersion)
 	if err != nil {
 		return err
 	}
 
-	c.ConstPoolSize = count
+	return binary.Read(r, byteOrder, &c.MajorVersion)
+}
+
+func (c *ClassFile) readConstPool(r io.Reader) error {
+	err := binary.Read(r, byteOrder, &c.ConstPoolSize)
+	if err != nil {
+		return err
+	}
+
+	c.ConstPool = make([]*ConstInfo, 0, c.ConstPoolSize)
+
+	for i := uint16(1); i < c.ConstPoolSize; i++ {
+		info, err := c.readConstInfo(r)
+		if err != nil {
+			return err
+		}
+
+		// This is one of the WORST! bugs ever!
+		// They even admit it in the JVM spec:
+		//
+		// "In retrospect, making 8-byte constants
+		// take two constant pool entries was a poor choice."
+		//
+		// The problem is, that both longs & doubles
+		// take up TWO!! slots in the const pool (an it
+		// looks like they take 2 in the local variable
+		// pool too). That's why we need to advance an
+		// extra slot, iff we encounter one of them
+		if info.Tag == CONSTANT_Long || info.Tag == CONSTANT_Double {
+			i++
+		}
+
+		c.ConstPool = append(c.ConstPool, info)
+	}
 
 	return nil
+}
+
+func (c *ClassFile) readConstInfo(r io.Reader) (*ConstInfo, error) {
+	info := &ConstInfo{}
+
+	err := binary.Read(r, byteOrder, &info.Tag)
+	if err != nil {
+		return nil, err
+	}
+
+	bytesToRead := uint16(0)
+	switch info.Tag {
+	case CONSTANT_Class, CONSTANT_String, CONSTANT_MethodType:
+		bytesToRead = 2
+
+	case CONSTANT_MethodHandle:
+		bytesToRead = 3
+
+	case CONSTANT_FieldRef, CONSTANT_MethodRef,
+		CONSTANT_InterfaceMethodRef, CONSTANT_Integer,
+		CONSTANT_Float, CONSTANT_NameAndType, CONSTANT_InvokeDynamic:
+		bytesToRead = 4
+
+	case CONSTANT_Long, CONSTANT_Double:
+		bytesToRead = 8
+
+	case CONSTANT_UTF8:
+		err = binary.Read(r, byteOrder, &bytesToRead)
+		if err != nil {
+			return nil, err
+		}
+
+	default:
+		panic("unknown tag in class file!")
+	}
+
+	info.Info = make([]uint8, bytesToRead)
+
+	err = binary.Read(r, byteOrder, &info.Info)
+	if err != nil {
+		return nil, err
+	}
+
+	return info, nil
 }
 
 func (c *ClassFile) readAccessFlags(r io.Reader) error {
@@ -77,9 +147,19 @@ func (c *ClassFile) readInterfaces(r io.Reader) error {
 		return err
 	}
 
-	c.Interfaces = make([]ConstPoolIndex, c.InterfacesCount)
+	c.Interfaces = make([]ConstPoolIndex, 0, c.InterfacesCount)
 
-	return binary.Read(r, byteOrder, c.Interfaces)
+	var idx ConstPoolIndex
+	for i := uint16(0); i < c.InterfacesCount; i++ {
+		err = binary.Read(r, byteOrder, &idx)
+		if err != nil {
+			return err
+		}
+
+		c.Interfaces = append(c.Interfaces, idx)
+	}
+
+	return nil
 }
 
 func (c *ClassFile) readFields(r io.Reader) error {
@@ -148,7 +228,7 @@ func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 		return nil, err
 	}
 
-	count, err := fom.Attributes.read(r, c.ConstantPool)
+	count, err := fom.Attributes.read(r, c.ConstPool)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +239,7 @@ func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 }
 
 func (c *ClassFile) readAttributes(r io.Reader) error {
-	count, err := c.Attributes.read(r, c.ConstantPool)
+	count, err := c.Attributes.read(r, c.ConstPool)
 	if err != nil {
 		return err
 	}
