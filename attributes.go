@@ -1,15 +1,7 @@
 package class
 
-import (
-	"encoding/binary"
-	"io"
-)
-
 type Attribute interface {
 	isAttr()
-
-	read(io.Reader) error
-	write(io.Writer) error
 }
 
 type baseAttribute struct {
@@ -17,45 +9,9 @@ type baseAttribute struct {
 	Length    uint32
 }
 
-func (ba baseAttribute) read(r io.Reader) error {
-	err := binary.Read(r, byteOrder, &ba.NameIndex)
-	if err != nil {
-		return err
-	}
-
-	return binary.Read(r, byteOrder, &ba.Length)
-}
-
-func (ba baseAttribute) write(w io.Writer) error {
-	err := binary.Write(w, byteOrder, ba.NameIndex)
-	if err != nil {
-		return err
-	}
-
-	return binary.Write(w, byteOrder, ba.Length)
-}
-
 type ConstantValue struct {
 	baseAttribute
 	Index ConstPoolIndex
-}
-
-func (cv *ConstantValue) read(r io.Reader) error {
-	err := cv.baseAttribute.read(r)
-	if err != nil {
-		return err
-	}
-
-	return binary.Read(r, byteOrder, &cv.Index)
-}
-
-func (cv *ConstantValue) write(w io.Writer) error {
-	err := cv.baseAttribute.write(w)
-	if err != nil {
-		return err
-	}
-
-	return binary.Write(w, byteOrder, cv.Index)
 }
 
 type Code struct {
@@ -81,6 +37,3 @@ type Code struct {
 	AttributesCount uint16
 	Attributes      []Attribute
 }
-
-func (_ *ConstantValue) isAttr() {}
-func (_ *Code) isAttr()          {}
