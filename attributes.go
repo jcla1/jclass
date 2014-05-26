@@ -20,26 +20,25 @@ type Attribute interface {
 }
 
 func readAttribute(r io.Reader, constPool ConstantPool) (Attribute, error) {
-	// var err error
+	var err error
 
-	// attrBase := new(baseAttribute)
-	// err = attrBase.read(r)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	attrBase := new(baseAttribute)
+	err = attrBase.read(r)
+	if err != nil {
+		return nil, err
+	}
 
-	// attr := initAttributeType(attrBase, constPool)
-	// attr.read(r, constPool)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	attr := initAttributeType(attrBase, constPool)
+	attr.read(r, constPool)
+	if err != nil {
+		return nil, err
+	}
 
-	// return attr, nil
-	return nil, nil
+	return attr, nil
 }
 
 func initAttributeType(base *baseAttribute, constPool ConstantPool) Attribute {
-	name := constPool[base.NameIndex].ConstantData.(*ConstUTF8Info).Value
+	name := string(constPool[base.NameIndex].Info)
 
 	var attr Attribute
 
@@ -75,8 +74,8 @@ func initAttributeType(base *baseAttribute, constPool ConstantPool) Attribute {
 	// 	attr = &RuntimeVisibleParameterAnnotations{}
 	// case "RuntimeInvisibleParameterAnnotations":
 	// 	attr = &RuntimeInvisibleParameterAnnotations{}
-	// case "AnnotationDefault":
-	//  attr = &AnnotationDefault{}
+	case "AnnotationDefault":
+		attr = &AnnotationDefault{}
 	case "BootstrapMethods":
 		attr = &BootstrapMethods{}
 	}
@@ -87,7 +86,7 @@ func initAttributeType(base *baseAttribute, constPool ConstantPool) Attribute {
 type Attributes []Attribute
 
 func (as Attributes) write(w io.Writer) error {
-	err := binary.Write(w, byteOrder, uint16(len(as)))
+	err := binary.Write(w, byteOrder, len(as))
 	if err != nil {
 		return err
 	}
@@ -531,21 +530,21 @@ type ElementValue struct {
 // type RuntimeVisibleParameterAnnotations RuntimeParameterAnnotations
 // type RuntimeInvisibleParameterAnnotations RuntimeParameterAnnotations
 
-// type AnnotationDefault struct {
-// 	baseAttribute
-// 	DefaultValue ElementValue
-// }
+type AnnotationDefault struct {
+	baseAttribute
+	DefaultValue ElementValue
+}
 
-// func (a *AnnotationDefault) read(r io.Reader, _ ConstantPool) error {
-// 	return a.DefaultValue.read(r)
-// }
+func (a *AnnotationDefault) read(r io.Reader, _ ConstantPool) error {
+	return a.DefaultValue.read(r)
+}
 
-// func (a *AnnotationDefault) write(w io.Writer) error {
-// 	return multiError([]error{
-// 		a.baseAttribute.write(w),
-// 		a.DefaultValue.write(w),
-// 	})
-// }
+func (a *AnnotationDefault) write(w io.Writer) error {
+	return multiError([]error{
+		a.baseAttribute.write(w),
+		a.DefaultValue.write(w),
+	})
+}
 
 type BootstrapMethod struct {
 	MethodRef      ConstPoolIndex
@@ -641,8 +640,8 @@ func (_ *Deprecated) isAttr()             {}
 // func (_ *RuntimeInvisibleAnnotations) isAttr()          {}
 // func (_ *RuntimeVisibleParameterAnnotations) isAttr()   {}
 // func (_ *RuntimeInvisibleParameterAnnotations) isAttr() {}
-// func (_ *AnnotationDefault) isAttr() {}
-func (_ *BootstrapMethods) isAttr() {}
+func (_ *AnnotationDefault) isAttr() {}
+func (_ *BootstrapMethods) isAttr()  {}
 
 func multiError(errs []error) error {
 	for _, err := range errs {

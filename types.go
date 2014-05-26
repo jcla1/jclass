@@ -51,7 +51,7 @@ type ClassFile struct {
 	// The Fields table only contains fields declared in
 	// this class or interface, not any inherited ones.
 	FieldsCount uint16
-	Fields
+	Fields      []*FieldInfo
 
 	// Methods contains method_info structs describing
 	// a method of this class or interface.
@@ -59,7 +59,7 @@ type ClassFile struct {
 	// flags are set, the corresponding code for the method
 	// will also be supplied.
 	MethodsCount uint16
-	Methods
+	Methods      []*MethodInfo
 
 	// Attributes describes properties of this class or
 	// interface through attribute_info structs.
@@ -71,3 +71,19 @@ type ClassAccessFlag uint16
 type NestedClassAccessFlag uint16
 type FieldAccessFlag uint16
 type MethodAccessFlag uint16
+
+type FieldInfo struct {
+	AccessFlags FieldAccessFlag
+	fieldOrMethodInfo
+}
+type MethodInfo struct {
+	AccessFlags MethodAccessFlag
+	fieldOrMethodInfo
+}
+
+type fieldOrMethodInfo struct {
+	NameIndex       ConstPoolIndex
+	DescriptorIndex ConstPoolIndex
+	AttributesCount uint16
+	Attributes
+}

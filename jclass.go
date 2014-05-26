@@ -2,7 +2,6 @@ package class
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
 )
 
@@ -79,27 +78,84 @@ func (c *ClassFile) readInterfaces(r io.Reader) error {
 	}
 
 	c.Interfaces = make([]ConstPoolIndex, c.InterfacesCount)
+
 	return binary.Read(r, byteOrder, c.Interfaces)
 }
 
 func (c *ClassFile) readFields(r io.Reader) error {
-	count, err := c.Fields.read(r)
+	err := binary.Read(r, byteOrder, &c.FieldsCount)
 	if err != nil {
 		return err
 	}
 
-	c.FieldsCount = count
+	c.Fields = make([]*FieldInfo, 0, c.FieldsCount)
+
+	for i := uint16(0); i < c.FieldsCount; i++ {
+		var access FieldAccessFlag
+		err := binary.Read(r, byteOrder, &access)
+		if err != nil {
+			return err
+		}
+
+		fieldOrMethod, err := c.readFieldOrMethod(r)
+		if err != nil {
+			return err
+		}
+
+		field := &FieldInfo{access, *fieldOrMethod}
+		c.Fields = append(c.Fields, field)
+	}
+
 	return nil
 }
 
 func (c *ClassFile) readMethods(r io.Reader) error {
-	count, err := c.Methods.read(r)
+	err := binary.Read(r, byteOrder, &c.MethodsCount)
 	if err != nil {
 		return err
 	}
 
-	c.MethodsCount = count
+	c.Methods = make([]*MethodInfo, 0, c.MethodsCount)
+
+	for i := uint16(0); i < c.MethodsCount; i++ {
+		var access MethodAccessFlag
+		err := binary.Read(r, byteOrder, &access)
+		if err != nil {
+			return err
+		}
+
+		fieldOrMethod, err := c.readFieldOrMethod(r)
+		if err != nil {
+			return err
+		}
+
+		method := &MethodInfo{access, *fieldOrMethod}
+		c.Methods = append(c.Methods, method)
+	}
+
 	return nil
+}
+
+func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
+	fom := &fieldOrMethodInfo{}
+
+	err := multiError([]error{
+		binary.Read(r, byteOrder, &fom.NameIndex),
+		binary.Read(r, byteOrder, &fom.DescriptorIndex),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	count, err := fom.Attributes.read(r, c.ConstantPool)
+	if err != nil {
+		return nil, err
+	}
+
+	fom.AttributesCount = count
+
+	return fom, nil
 }
 
 func (c *ClassFile) readAttributes(r io.Reader) error {

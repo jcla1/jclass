@@ -59,7 +59,7 @@ func (c ConstantPool) read(r io.Reader) (uint16, error) {
 }
 
 func (c ConstantPool) write(w io.Writer) error {
-	err := binary.Write(w, byteOrder, uint16(len(c)))
+	err := binary.Write(w, byteOrder, len(c))
 	if err != nil {
 		return err
 	}
