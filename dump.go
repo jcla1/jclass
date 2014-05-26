@@ -159,7 +159,6 @@ func writeFieldOrMethodInfo(w io.Writer, fom fieldOrMethodInfo) error {
 	errs := []error{
 		binary.Write(w, byteOrder, fom.NameIndex),
 		binary.Write(w, byteOrder, fom.DescriptorIndex),
-		binary.Write(w, byteOrder, fom.AttributesCount),
 	}
 
 	for _, err := range errs {
@@ -168,50 +167,14 @@ func writeFieldOrMethodInfo(w io.Writer, fom fieldOrMethodInfo) error {
 		}
 	}
 
-	for _, attr := range fom.Attributes {
-		err := writeAttribute(w, attr)
-		if err != nil {
-			return err
-		}
+	err := fom.Attributes.write(w)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func (c *ClassFile) writeAttributes(w io.Writer) error {
-	var err error
-
-	err = binary.Write(w, byteOrder, c.AttributesCount)
-	if err != nil {
-		return err
-	}
-
-	for _, attr := range c.Attributes {
-		err = writeAttribute(w, attr)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func writeAttribute(w io.Writer, attr *AttributeInfo) error {
-	errs := []error{
-		binary.Write(w, byteOrder, attr.NameIndex),
-		binary.Write(w, byteOrder, attr.Length),
-	}
-
-	for _, err := range errs {
-		if err != nil {
-			return err
-		}
-	}
-
-	err := binary.Write(w, byteOrder, attr.Info)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.Attributes.write(w)
 }

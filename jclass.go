@@ -177,7 +177,7 @@ func (c *ClassFile) readFields(r io.Reader) error {
 			return err
 		}
 
-		fieldOrMethod, err := readFieldOrMethod(r)
+		fieldOrMethod, err := c.readFieldOrMethod(r)
 		if err != nil {
 			return err
 		}
@@ -204,7 +204,7 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 			return err
 		}
 
-		fieldOrMethod, err := readFieldOrMethod(r)
+		fieldOrMethod, err := c.readFieldOrMethod(r)
 		if err != nil {
 			return err
 		}
@@ -216,76 +216,35 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 	return nil
 }
 
-func readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
+func (c *ClassFile) readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 	fom := &fieldOrMethodInfo{}
 
-	errs := []error{
+	err := multiError([]error{
 		binary.Read(r, byteOrder, &fom.NameIndex),
 		binary.Read(r, byteOrder, &fom.DescriptorIndex),
-		binary.Read(r, byteOrder, &fom.AttributesCount),
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	for _, err := range errs {
-		if err != nil {
-			return nil, err
-		}
+	count, err := fom.Attributes.read(r, c.ConstPool)
+	if err != nil {
+		return nil, err
 	}
 
-	fom.Attributes = make([]*AttributeInfo, 0, fom.AttributesCount)
-
-	for i := uint16(0); i < fom.AttributesCount; i++ {
-		attr, err := readAttribute(r)
-		if err != nil {
-			return nil, err
-		}
-
-		fom.Attributes = append(fom.Attributes, attr)
-	}
+	fom.AttributesCount = count
 
 	return fom, nil
 }
 
 func (c *ClassFile) readAttributes(r io.Reader) error {
-	err := binary.Read(r, byteOrder, &c.AttributesCount)
+	count, err := c.Attributes.read(r, c.ConstPool)
 	if err != nil {
 		return err
 	}
 
-	c.Attributes = make([]*AttributeInfo, 0, c.AttributesCount)
-
-	var attr *AttributeInfo
-	for i := uint16(0); i < c.AttributesCount; i++ {
-		attr, err = readAttribute(r)
-		if err != nil {
-			return err
-		}
-
-		c.Attributes = append(c.Attributes, attr)
-	}
+	c.AttributesCount = count
 
 	return nil
-}
-
-func readAttribute(r io.Reader) (*AttributeInfo, error) {
-	attr := &AttributeInfo{}
-
-	errs := []error{
-		binary.Read(r, byteOrder, &attr.NameIndex),
-		binary.Read(r, byteOrder, &attr.Length),
-	}
-
-	for _, err := range errs {
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	attr.Info = make([]uint8, attr.Length)
-
-	err := binary.Read(r, byteOrder, &attr.Info)
-	if err != nil {
-		return nil, err
-	}
-
-	return attr, nil
 }
