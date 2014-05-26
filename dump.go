@@ -50,42 +50,7 @@ func (c *ClassFile) writeVersion(w io.Writer) error {
 }
 
 func (c *ClassFile) writeConstPool(w io.Writer) error {
-	err := binary.Write(w, byteOrder, c.ConstPoolSize)
-	if err != nil {
-		return err
-	}
-
-	for _, constant := range c.ConstPool {
-		err := c.writeConstInfo(w, constant)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *ClassFile) writeConstInfo(w io.Writer, info *ConstInfo) error {
-	var err error
-
-	err = binary.Write(w, byteOrder, info.Tag)
-	if err != nil {
-		return err
-	}
-
-	if info.Tag == CONSTANT_UTF8 {
-		err = binary.Write(w, byteOrder, uint16(len(info.Info)))
-		if err != nil {
-			return err
-		}
-	}
-
-	err = binary.Write(w, byteOrder, info.Info)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.ConstantPool.write(w)
 }
 
 func (c *ClassFile) writeAccessFlags(w io.Writer) error {

@@ -17,7 +17,7 @@ type ClassFile struct {
 	// interface & field names and other constants that
 	// are referred to in the class file structure.
 	ConstPoolSize uint16
-	ConstPool     []*ConstInfo
+	ConstantPool
 
 	// AccessFlags is a mask of flags used to denote
 	// access permissions and properties of this class
@@ -86,13 +86,4 @@ type fieldOrMethodInfo struct {
 	DescriptorIndex ConstPoolIndex
 	AttributesCount uint16
 	Attributes
-}
-
-type ConstInfoTag uint8
-type ConstPoolIndex uint16
-type ConstantPool []*ConstInfo
-
-type ConstInfo struct {
-	Tag  ConstInfoTag
-	Info []uint8
 }
