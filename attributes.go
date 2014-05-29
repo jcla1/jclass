@@ -35,7 +35,8 @@ type Code struct {
 		CatchType ConstPoolIndex
 	}
 
-	// only LineNumberTable, LocalVariableTable, LocalVariableTypeTable
+	// only LineNumberTable, LocalVariableTable,
+	// LocalVariableTypeTable, StackMapTable
 	AttributesCount uint16
 	Attributes
 }
@@ -44,36 +45,65 @@ type StackMapTable struct {
 	baseAttribute
 }
 
+// method_info, may single
 type Exceptions struct {
 	baseAttribute
+	ExceptionsCount uint16
+	Exceptions      []ConstPoolIndex
 }
 
+// ClassFile, may single
 type InnerClasses struct {
 	baseAttribute
+
+	ClassesCount uint16
+	Classes      []struct {
+		InnerClassIndex  ConstPoolIndex
+		OuterClassIndex  ConstPoolIndex
+		InnerName        ConstPoolIndex
+		InnerAccessFlags NestedClassAccessFlag
+	}
 }
 
+// ClassFile, may single
+// iff local class or anonymous class
 type EnclosingMethod struct {
 	baseAttribute
+	ClassIndex  ConstPoolIndex
+	MethodIndex ConstPoolIndex
 }
 
-type Synthetic struct {
-	baseAttribute
-}
+// ClassFile, method_info or field_info, may single
+// if compiler generated
+// instead maybe: ACC_SYNTHETIC
+type Synthetic baseAttribute
 
+// ClassFile, field_info, or method_info, may single
 type Signature struct {
 	baseAttribute
+	SignatureIndex ConstPoolIndex
 }
 
+// ClassFile, may single
 type SourceFile struct {
 	baseAttribute
+	SourceFileIndex ConstPoolIndex
 }
 
+// ClassFile, may single
 type SourceDebugExtension struct {
 	baseAttribute
+	DebugExtension string
 }
 
+// Code, may multiple
 type LineNumberTable struct {
 	baseAttribute
+	TableLength uint16
+	Table       []struct {
+		StartPC    uint16
+		LineNumber uint16
+	}
 }
 
 type LocalVariableTable struct {
