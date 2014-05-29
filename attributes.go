@@ -106,17 +106,36 @@ type LineNumberTable struct {
 	}
 }
 
+// Code, may multiple
 type LocalVariableTable struct {
 	baseAttribute
+	TableLength uint16
+	Table       []struct {
+		StartPC         uint16
+		Length          uint16
+		NameIndex       ConstPoolIndex
+		DescriptorIndex ConstPoolIndex
+		// index into local variable array of current frame
+		Index uint16
+	}
 }
 
+// Code, may multiple
 type LocalVariableTypeTable struct {
 	baseAttribute
+	TableLength uint16
+	Table       []struct {
+		StartPC        uint16
+		Length         uint16
+		NameIndex      ConstPoolIndex
+		SignatureIndex ConstPoolIndex
+		// index into local variable array of current frame
+		Index uint16
+	}
 }
 
-type Deprecated struct {
-	baseAttribute
-}
+// ClassFile, field_info, or method_info, may single
+type Deprecated baseAttribute
 
 type RuntimeVisibleAnnotations struct {
 	baseAttribute
@@ -138,6 +157,14 @@ type AnnotationDefault struct {
 	baseAttribute
 }
 
+// ClassFile, may single
+// iff constpool conatains CONSTANT_InvokeDynamic_info
 type BootstrapMethods struct {
 	baseAttribute
+	MethodsCount uint16
+	Methods      []struct {
+		MethodRef ConstPoolIndex
+		ArgsCount uint16
+		Args      []ConstPoolIndex
+	}
 }
