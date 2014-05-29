@@ -289,3 +289,14 @@ func readAttribute(r io.Reader) (*AttributeInfo, error) {
 
 	return attr, nil
 }
+
+// Useful when reading from data stream multiple times
+func multiError(errs []error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
