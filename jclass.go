@@ -42,12 +42,10 @@ func (c *ClassFile) readMagic(r io.Reader) error {
 }
 
 func (c *ClassFile) readVersion(r io.Reader) error {
-	err := binary.Read(r, byteOrder, &c.MinorVersion)
-	if err != nil {
-		return err
-	}
-
-	return binary.Read(r, byteOrder, &c.MajorVersion)
+	return multiError([]error{
+		binary.Read(r, byteOrder, &c.MinorVersion),
+		binary.Read(r, byteOrder, &c.MajorVersion),
+	})
 }
 
 func (c *ClassFile) readConstPool(r io.Reader) error {
@@ -219,16 +217,14 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 func readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 	fom := &fieldOrMethodInfo{}
 
-	errs := []error{
+	err := multiError([]error{
 		binary.Read(r, byteOrder, &fom.NameIndex),
 		binary.Read(r, byteOrder, &fom.DescriptorIndex),
 		binary.Read(r, byteOrder, &fom.AttributesCount),
-	}
+	})
 
-	for _, err := range errs {
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
 	}
 
 	fom.Attributes = make([]*AttributeInfo, 0, fom.AttributesCount)
@@ -269,15 +265,13 @@ func (c *ClassFile) readAttributes(r io.Reader) error {
 func readAttribute(r io.Reader) (*AttributeInfo, error) {
 	attr := &AttributeInfo{}
 
-	errs := []error{
+	multiError([]error{
 		binary.Read(r, byteOrder, &attr.NameIndex),
 		binary.Read(r, byteOrder, &attr.Length),
-	}
+	})
 
-	for _, err := range errs {
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
 	}
 
 	attr.Info = make([]uint8, attr.Length)
