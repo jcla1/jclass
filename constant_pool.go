@@ -155,6 +155,10 @@ func (c *ClassRef) Read(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.NameIndex)
 }
 
+func (c *ClassRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
+}
+
 type fieldMethodInterfaceRef struct {
 	baseConstant
 	ClassIndex       ConstPoolIndex
@@ -166,6 +170,10 @@ func (c *fieldMethodInterfaceRef) Read(r io.Reader) error {
 		binary.Read(r, byteOrder, &c.ClassIndex),
 		binary.Read(r, byteOrder, &c.NameAndTypeIndex),
 	})
+}
+
+func (c *fieldMethodInterfaceRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
 }
 
 type FieldRef struct {
@@ -197,6 +205,10 @@ func (c *StringRef) Read(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.Index)
 }
 
+func (c *StringRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
+}
+
 type IntegerRef struct {
 	baseConstant
 	Value int32
@@ -206,6 +218,10 @@ func (c *IntegerRef) Integer() *IntegerRef { return c }
 
 func (c *IntegerRef) Read(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.Value)
+}
+
+func (c *IntegerRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
 }
 
 type FloatRef struct {
@@ -219,6 +235,10 @@ func (c *FloatRef) Read(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.Value)
 }
 
+func (c *FloatRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
+}
+
 type LongRef struct {
 	baseConstant
 	Value int64
@@ -230,6 +250,10 @@ func (c *LongRef) Read(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.Value)
 }
 
+func (c *LongRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
+}
+
 type DoubleRef struct {
 	baseConstant
 	Value float64
@@ -239,6 +263,10 @@ func (c *DoubleRef) Double() *DoubleRef { return c }
 
 func (c *DoubleRef) Read(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.Value)
+}
+
+func (c *DoubleRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
 }
 
 type NameAndTypeRef struct {
@@ -254,6 +282,10 @@ func (c *NameAndTypeRef) Read(r io.Reader) error {
 		binary.Read(r, byteOrder, &c.NameIndex),
 		binary.Read(r, byteOrder, &c.DescriptorIndex),
 	})
+}
+
+func (c *NameAndTypeRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
 }
 
 type UTF8Ref struct {
@@ -284,6 +316,15 @@ func (c *UTF8Ref) Read(r io.Reader) error {
 	return nil
 }
 
+func (c *UTF8Ref) Dump(w io.Writer) error {
+	err := binary.Write(w, byteOrder, uint16(len(c.Value)))
+	if err != nil {
+		return err
+	}
+
+	return binary.Write(w, byteOrder, []byte(c.Value))
+}
+
 type MethodHandleRef struct {
 	baseConstant
 	ReferenceKind  uint8
@@ -299,6 +340,10 @@ func (c *MethodHandleRef) Read(r io.Reader) error {
 	})
 }
 
+func (c *MethodHandleRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
+}
+
 type MethodTypeRef struct {
 	baseConstant
 	DescriptorIndex ConstPoolIndex
@@ -308,6 +353,10 @@ func (c *MethodTypeRef) MethodType() *MethodTypeRef { return c }
 
 func (c *MethodTypeRef) Read(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.DescriptorIndex)
+}
+
+func (c *MethodTypeRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
 }
 
 type InvokeDynamicRef struct {
@@ -323,4 +372,8 @@ func (c *InvokeDynamicRef) Read(r io.Reader) error {
 		binary.Read(r, byteOrder, &c.BootstrapMethodAttrIndex),
 		binary.Read(r, byteOrder, &c.NameAndTypeIndex),
 	})
+}
+
+func (c *InvokeDynamicRef) Dump(w io.Writer) error {
+	return binary.Write(w, byteOrder, c)
 }

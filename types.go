@@ -46,8 +46,7 @@ type ClassFile struct {
 	// where every referenced entry describes a
 	// CONSTANT_Class_info struct representing a direct
 	// super-interface of this class or interface.
-	InterfacesCount uint16
-	Interfaces      []ConstPoolIndex
+	Interfaces []ConstPoolIndex
 
 	// Fields contains indexes into the constant pool,
 	// referencing field_info structs, giving a complete
@@ -73,7 +72,7 @@ type Dumper interface {
 }
 
 type Attribute interface {
-	// Dumper
+	Dumper
 
 	Read(io.Reader, ConstantPool) error
 
@@ -103,7 +102,7 @@ type Attribute interface {
 }
 
 type Constant interface {
-	// Dumper
+	Dumper
 
 	Read(io.Reader) error
 
