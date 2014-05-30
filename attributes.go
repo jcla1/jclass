@@ -563,6 +563,7 @@ type RuntimeVisibleAnnotations struct {
 }
 
 func (a *RuntimeVisibleAnnotations) RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations { return a }
+func (_ *RuntimeVisibleAnnotations) GetTag() AttributeType                                 { return RuntimeVisibleAnnotationsTag }
 
 type RuntimeInvisibleAnnotations struct {
 	baseAttribute
@@ -571,6 +572,7 @@ type RuntimeInvisibleAnnotations struct {
 func (a *RuntimeInvisibleAnnotations) RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations {
 	return a
 }
+func (_ *RuntimeInvisibleAnnotations) GetTag() AttributeType { return RuntimeInvisibleAnnotationsTag }
 
 type RuntimeVisibleParameterAnnotations struct {
 	baseAttribute
@@ -578,6 +580,9 @@ type RuntimeVisibleParameterAnnotations struct {
 
 func (a *RuntimeVisibleParameterAnnotations) RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations {
 	return a
+}
+func (_ *RuntimeVisibleParameterAnnotations) GetTag() AttributeType {
+	return RuntimeVisibleParameterAnnotationsTag
 }
 
 type RuntimeInvisibleParameterAnnotations struct {
@@ -587,12 +592,16 @@ type RuntimeInvisibleParameterAnnotations struct {
 func (a *RuntimeInvisibleParameterAnnotations) RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations {
 	return a
 }
+func (_ *RuntimeInvisibleParameterAnnotations) GetTag() AttributeType {
+	return RuntimeInvisibleParameterAnnotationsTag
+}
 
 type AnnotationDefault struct {
 	baseAttribute
 }
 
 func (a *AnnotationDefault) AnnotationDefault() *AnnotationDefault { return a }
+func (_ *AnnotationDefault) GetTag() AttributeType                 { return AnnotationDefaultTag }
 
 // ClassFile, may single
 // iff constpool conatains CONSTANT_InvokeDynamic_info
