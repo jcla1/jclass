@@ -1,5 +1,9 @@
 package class
 
+import (
+	"io"
+)
+
 // ClassFile represents a single class file as specified in:
 // http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html
 type ClassFile struct {
@@ -22,7 +26,7 @@ type ClassFile struct {
 	// AccessFlags is a mask of flags used to denote
 	// access permissions and properties of this class
 	// or interface.
-	AccessFlags ClassAccessFlag
+	AccessFlags
 
 	// Index into the constant pool, where you should
 	// find a CONSTANT_Class_info struct that describes
@@ -67,17 +71,52 @@ type ClassFile struct {
 	Attributes      []*AttributeInfo
 }
 
-type ClassAccessFlag uint16
-type NestedClassAccessFlag uint16
-type FieldAccessFlag uint16
-type MethodAccessFlag uint16
+type Reader interface {
+	Read(io.Reader) error
+}
+
+type Dumper interface {
+	Dump(io.Writer) error
+}
+
+type Attribute interface {
+	Reader
+	Dumper
+
+	GetTag() AttributeType
+
+	ConstantValue() *ConstantValue
+	Code() *Code
+	// StackMapTable() *StackMapTable
+	Exceptions() *Exceptions
+	InnerClasses() *InnerClasses
+	EnclosingMethod() *EnclosingMethod
+	Synthetic() *Synthetic
+	Signature() *Signature
+	SourceFile() *SourceFile
+	SourceDebugExtension() *SourceDebugExtension
+	LineNumberTable() *LineNumberTable
+	LocalVariableTable() *LocalVariableTable
+	LocalVariableTypeTable() *LocalVariableTypeTable
+	Deprecated() *Deprecated
+	// RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations
+	// RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations
+	// RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations
+	// RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations
+	// AnnotationDefault() *AnnotationDefault
+	BootstrapMethods() *BootstrapMethods
+}
+
+type Attributes []Attribute
+
+type AccessFlags uint16
 
 type FieldInfo struct {
-	AccessFlags FieldAccessFlag
+	AccessFlags
 	fieldOrMethodInfo
 }
 type MethodInfo struct {
-	AccessFlags MethodAccessFlag
+	AccessFlags
 	fieldOrMethodInfo
 }
 

@@ -169,7 +169,7 @@ func (c *ClassFile) readFields(r io.Reader) error {
 	c.Fields = make([]*FieldInfo, 0, c.FieldsCount)
 
 	for i := uint16(0); i < c.FieldsCount; i++ {
-		var access FieldAccessFlag
+		var access AccessFlags
 		err := binary.Read(r, byteOrder, &access)
 		if err != nil {
 			return err
@@ -196,7 +196,7 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 	c.Methods = make([]*MethodInfo, 0, c.MethodsCount)
 
 	for i := uint16(0); i < c.MethodsCount; i++ {
-		var access MethodAccessFlag
+		var access AccessFlags
 		err := binary.Read(r, byteOrder, &access)
 		if err != nil {
 			return err
@@ -265,7 +265,7 @@ func (c *ClassFile) readAttributes(r io.Reader) error {
 func readAttribute(r io.Reader) (*AttributeInfo, error) {
 	attr := &AttributeInfo{}
 
-	multiError([]error{
+	err := multiError([]error{
 		binary.Read(r, byteOrder, &attr.NameIndex),
 		binary.Read(r, byteOrder, &attr.Length),
 	})
@@ -276,7 +276,7 @@ func readAttribute(r io.Reader) (*AttributeInfo, error) {
 
 	attr.Info = make([]uint8, attr.Length)
 
-	err := binary.Read(r, byteOrder, &attr.Info)
+	err = binary.Read(r, byteOrder, &attr.Info)
 	if err != nil {
 		return nil, err
 	}

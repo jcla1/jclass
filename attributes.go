@@ -8,6 +8,10 @@ type baseAttribute struct {
 	Length    uint16
 }
 
+func (b baseAttribute) GetTag() AttributeType {
+	return b.attrType
+}
+
 // field_info, may single
 // ACC_STATIC only
 type ConstantValue struct {
@@ -61,7 +65,7 @@ type InnerClasses struct {
 		InnerClassIndex  ConstPoolIndex
 		OuterClassIndex  ConstPoolIndex
 		InnerName        ConstPoolIndex
-		InnerAccessFlags NestedClassAccessFlag
+		InnerAccessFlags AccessFlags
 	}
 }
 
