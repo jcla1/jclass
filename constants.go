@@ -87,4 +87,24 @@ const (
 
 const (
 	UnknownTag AttributeType = iota
+	ConstantValueTag
+	CodeTag
+	StackMapTableTag
+	ExceptionsTag
+	InnerClassesTag
+	EnclosingMethodTag
+	SyntheticTag
+	SignatureTag
+	SourceFileTag
+	SourceDebugExtensionTag
+	LineNumberTableTag
+	LocalVariableTableTag
+	LocalVariableTypeTableTag
+	DeprecatedTag
+	RuntimeVisibleAnnotationsTag
+	RuntimeInvisibleAnnotationsTag
+	RuntimeVisibleParameterAnnotationsTag
+	RuntimeInvisibleParameterAnnotationsTag
+	AnnotationDefaultTag
+	BootstrapMethodsTag
 )

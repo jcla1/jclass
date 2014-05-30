@@ -1,5 +1,124 @@
 package class
 
+import (
+	"encoding/binary"
+	"io"
+)
+
+func readAttributes(r io.Reader, constPool ConstantPool) (Attributes, error) {
+	var count uint16
+	err := binary.Read(r, byteOrder, &count)
+	if err != nil {
+		return nil, err
+	}
+
+	attrs := make(Attributes, 0, count)
+
+	for i := uint16(0); i < count; i++ {
+		attr, err := readAttribute(r, constPool)
+		if err != nil {
+			return nil, err
+		}
+
+		attrs = append(attrs, attr)
+	}
+
+	return attrs, nil
+}
+
+func readAttribute(r io.Reader, constPool ConstantPool) (Attribute, error) {
+	attrBase := baseAttribute{}
+
+	err := multiError([]error{
+		binary.Read(r, byteOrder, &attrBase.NameIndex),
+		binary.Read(r, byteOrder, &attrBase.Length),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return fillAttribute(r, attrBase, constPool)
+}
+
+func fillAttribute(r io.Reader, attrBase baseAttribute, constPool ConstantPool) (Attribute, error) {
+	var attr Attribute
+	name := constPool.GetString(attrBase.NameIndex)
+
+	switch name {
+	case "ConstantValue":
+		attrBase.attrType = ConstantValueTag
+		attr = &ConstantValue{baseAttribute: attrBase}
+	case "Code":
+		attrBase.attrType = CodeTag
+		attr = &Code{baseAttribute: attrBase}
+	// case "StackMapTable":
+	//     attrBase.attrType = StackMapTableTag
+	//     attr = &StackMapTable{baseAttribute: attrBase}
+	case "Exceptions":
+		attrBase.attrType = ExceptionsTag
+		attr = &Exceptions{baseAttribute: attrBase}
+	case "InnerClasses":
+		attrBase.attrType = InnerClassesTag
+		attr = &InnerClasses{baseAttribute: attrBase}
+	case "EnclosingMethod":
+		attrBase.attrType = EnclosingMethodTag
+		attr = &EnclosingMethod{baseAttribute: attrBase}
+	case "Synthetic":
+		attrBase.attrType = SyntheticTag
+		attr = &Synthetic{baseAttribute: attrBase}
+	case "Signature":
+		attrBase.attrType = SignatureTag
+		attr = &Signature{baseAttribute: attrBase}
+	case "SourceFile":
+		attrBase.attrType = SourceFileTag
+		attr = &SourceFile{baseAttribute: attrBase}
+	case "SourceDebugExtension":
+		attrBase.attrType = SourceDebugExtensionTag
+		attr = &SourceDebugExtension{baseAttribute: attrBase}
+	case "LineNumberTable":
+		attrBase.attrType = LineNumberTableTag
+		attr = &LineNumberTable{baseAttribute: attrBase}
+	case "LocalVariableTable":
+		attrBase.attrType = LocalVariableTableTag
+		attr = &LocalVariableTable{baseAttribute: attrBase}
+	case "LocalVariableTypeTable":
+		attrBase.attrType = LocalVariableTypeTableTag
+		attr = &LocalVariableTypeTable{baseAttribute: attrBase}
+	case "Deprecated":
+		attrBase.attrType = DeprecatedTag
+		attr = &Deprecated{baseAttribute: attrBase}
+	// case "RuntimeVisibleAnnotations":
+	// 	attrBase.attrType = RuntimeVisibleAnnotationsTag
+	// 	attr = &RuntimeVisibleAnnotations{baseAttribute: attrBase}
+	// case "RuntimeInvisibleAnnotations":
+	// 	attrBase.attrType = RuntimeInvisibleAnnotationsTag
+	// 	attr = &RuntimeInvisibleAnnotations{baseAttribute: attrBase}
+	// case "RuntimeVisibleParameterAnnotations":
+	// 	attrBase.attrType = RuntimeVisibleParameterAnnotationsTag
+	// 	attr = &RuntimeVisibleParameterAnnotations{baseAttribute: attrBase}
+	// case "RuntimeInvisibleParameterAnnotations":
+	// 	attrBase.attrType = RuntimeInvisibleParameterAnnotationsTag
+	// 	attr = &RuntimeInvisibleParameterAnnotations{baseAttribute: attrBase}
+	// case "AnnotationDefault":
+	// 	attrBase.attrType = AnnotationDefaultTag
+	// 	attr = &AnnotationDefault{baseAttribute: attrBase}
+	case "BootstrapMethods":
+		attrBase.attrType = BootstrapMethodsTag
+		attr = &BootstrapMethods{baseAttribute: attrBase}
+	default:
+		attrBase.attrType = UnknownTag
+		attr = &UnknownAttr{baseAttribute: attrBase}
+	}
+
+	err := attr.Read(r, constPool)
+	if err != nil {
+		return nil, err
+	}
+
+	return attr, nil
+}
+
 type AttributeType uint8
 
 type baseAttribute struct {

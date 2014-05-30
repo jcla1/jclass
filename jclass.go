@@ -54,7 +54,7 @@ func (c *ClassFile) readConstPool(r io.Reader) error {
 		return err
 	}
 
-	c.ConstPool = make([]*ConstInfo, 0, c.ConstPoolSize)
+	c.ConstantPool = make([]*ConstInfo, 0, c.ConstPoolSize)
 
 	for i := uint16(1); i < c.ConstPoolSize; i++ {
 		info, err := c.readConstInfo(r)
@@ -77,7 +77,7 @@ func (c *ClassFile) readConstPool(r io.Reader) error {
 			i++
 		}
 
-		c.ConstPool = append(c.ConstPool, info)
+		c.ConstantPool = append(c.ConstantPool, info)
 	}
 
 	return nil
@@ -242,46 +242,14 @@ func readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
 }
 
 func (c *ClassFile) readAttributes(r io.Reader) error {
-	err := binary.Read(r, byteOrder, &c.AttributesCount)
+	attrs, err := readAttributes(r, c.ConstantPool)
 	if err != nil {
 		return err
 	}
 
-	c.Attributes = make([]*AttributeInfo, 0, c.AttributesCount)
-
-	var attr *AttributeInfo
-	for i := uint16(0); i < c.AttributesCount; i++ {
-		attr, err = readAttribute(r)
-		if err != nil {
-			return err
-		}
-
-		c.Attributes = append(c.Attributes, attr)
-	}
+	c.Attributes = attrs
 
 	return nil
-}
-
-func readAttribute(r io.Reader) (*AttributeInfo, error) {
-	attr := &AttributeInfo{}
-
-	err := multiError([]error{
-		binary.Read(r, byteOrder, &attr.NameIndex),
-		binary.Read(r, byteOrder, &attr.Length),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	attr.Info = make([]uint8, attr.Length)
-
-	err = binary.Read(r, byteOrder, &attr.Info)
-	if err != nil {
-		return nil, err
-	}
-
-	return attr, nil
 }
 
 // Useful when reading from data stream multiple times

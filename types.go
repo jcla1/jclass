@@ -21,7 +21,7 @@ type ClassFile struct {
 	// interface & field names and other constants that
 	// are referred to in the class file structure.
 	ConstPoolSize uint16
-	ConstPool     []*ConstInfo
+	ConstantPool
 
 	// AccessFlags is a mask of flags used to denote
 	// access permissions and properties of this class
@@ -67,12 +67,11 @@ type ClassFile struct {
 
 	// Attributes describes properties of this class or
 	// interface through attribute_info structs.
-	AttributesCount uint16
-	Attributes      []*AttributeInfo
+	Attributes
 }
 
 type Reader interface {
-	Read(io.Reader) error
+	Read(io.Reader, ConstantPool) error
 }
 
 type Dumper interface {
@@ -110,6 +109,8 @@ type Attribute interface {
 type Attributes []Attribute
 
 type AccessFlags uint16
+
+type ConstantPool []*ConstInfo
 
 type FieldInfo struct {
 	AccessFlags

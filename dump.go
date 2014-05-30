@@ -55,7 +55,7 @@ func (c *ClassFile) writeConstPool(w io.Writer) error {
 		return err
 	}
 
-	for _, constant := range c.ConstPool {
+	for _, constant := range c.ConstantPool {
 		err := c.writeConstInfo(w, constant)
 		if err != nil {
 			return err
