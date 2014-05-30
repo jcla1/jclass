@@ -116,7 +116,7 @@ func (c *ClassFile) writeSuperClass(w io.Writer) error {
 
 func (c *ClassFile) readInterfaces(r io.Reader) error {
 	var count uint16
-	err := binary.Read(r, byteOrder, count)
+	err := binary.Read(r, byteOrder, &count)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (c *ClassFile) readInterfaces(r io.Reader) error {
 }
 
 func (c *ClassFile) writeInterfaces(w io.Writer) error {
-	err := binary.Write(w, byteOrder, len(c.Interfaces))
+	err := binary.Write(w, byteOrder, uint16(len(c.Interfaces)))
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (c *ClassFile) readFields(r io.Reader) error {
 }
 
 func (c *ClassFile) writeFields(w io.Writer) error {
-	err := binary.Write(w, byteOrder, len(c.Fields))
+	err := binary.Write(w, byteOrder, uint16(len(c.Fields)))
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 }
 
 func (c *ClassFile) writeMethods(w io.Writer) error {
-	err := binary.Write(w, byteOrder, len(c.Methods))
+	err := binary.Write(w, byteOrder, uint16(len(c.Methods)))
 	if err != nil {
 		return err
 	}

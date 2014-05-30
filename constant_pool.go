@@ -63,7 +63,7 @@ func (c *ClassFile) readConstPool(r io.Reader) error {
 func readConstant(r io.Reader) (Constant, error) {
 	constBase := baseConstant{}
 
-	err := binary.Read(r, byteOrder, &constBase.tag)
+	err := binary.Read(r, byteOrder, &constBase.Tag)
 	if err != nil {
 		return nil, err
 	}
@@ -118,11 +118,11 @@ func fillConstant(r io.Reader, constBase baseConstant) (Constant, error) {
 type ConstantType uint8
 
 type baseConstant struct {
-	tag ConstantType
+	Tag ConstantType
 }
 
 func (b baseConstant) GetTag() ConstantType {
-	return b.tag
+	return b.Tag
 }
 
 func (_ baseConstant) Class() *ClassRef   { panic("jclass: constant is not Class") }

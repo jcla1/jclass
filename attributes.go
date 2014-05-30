@@ -2,6 +2,7 @@ package class
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
@@ -27,7 +28,7 @@ func readAttributes(r io.Reader, constPool ConstantPool) (Attributes, error) {
 }
 
 func writeAttributes(w io.Writer, attrs Attributes) error {
-	err := binary.Write(w, byteOrder, len(attrs))
+	err := binary.Write(w, byteOrder, uint16(len(attrs)))
 	if err != nil {
 		return err
 	}
@@ -63,67 +64,46 @@ func fillAttribute(r io.Reader, attrBase baseAttribute, constPool ConstantPool) 
 
 	switch name {
 	case "ConstantValue":
-		attrBase.attrType = ConstantValueTag
 		attr = &ConstantValue{baseAttribute: attrBase}
 	case "Code":
-		attrBase.attrType = CodeTag
 		attr = &Code{baseAttribute: attrBase}
 	// case "StackMapTable":
-	//     attrBase.attrType = StackMapTableTag
 	//     attr = &StackMapTable{baseAttribute: attrBase}
 	case "Exceptions":
-		attrBase.attrType = ExceptionsTag
 		attr = &Exceptions{baseAttribute: attrBase}
 	case "InnerClasses":
-		attrBase.attrType = InnerClassesTag
 		attr = &InnerClasses{baseAttribute: attrBase}
 	case "EnclosingMethod":
-		attrBase.attrType = EnclosingMethodTag
 		attr = &EnclosingMethod{baseAttribute: attrBase}
 	case "Synthetic":
-		attrBase.attrType = SyntheticTag
 		attr = &Synthetic{baseAttribute: attrBase}
 	case "Signature":
-		attrBase.attrType = SignatureTag
 		attr = &Signature{baseAttribute: attrBase}
 	case "SourceFile":
-		attrBase.attrType = SourceFileTag
 		attr = &SourceFile{baseAttribute: attrBase}
 	case "SourceDebugExtension":
-		attrBase.attrType = SourceDebugExtensionTag
 		attr = &SourceDebugExtension{baseAttribute: attrBase}
 	case "LineNumberTable":
-		attrBase.attrType = LineNumberTableTag
 		attr = &LineNumberTable{baseAttribute: attrBase}
 	case "LocalVariableTable":
-		attrBase.attrType = LocalVariableTableTag
 		attr = &LocalVariableTable{baseAttribute: attrBase}
 	case "LocalVariableTypeTable":
-		attrBase.attrType = LocalVariableTypeTableTag
 		attr = &LocalVariableTypeTable{baseAttribute: attrBase}
 	case "Deprecated":
-		attrBase.attrType = DeprecatedTag
 		attr = &Deprecated{baseAttribute: attrBase}
 	// case "RuntimeVisibleAnnotations":
-	// 	attrBase.attrType = RuntimeVisibleAnnotationsTag
 	// 	attr = &RuntimeVisibleAnnotations{baseAttribute: attrBase}
 	// case "RuntimeInvisibleAnnotations":
-	// 	attrBase.attrType = RuntimeInvisibleAnnotationsTag
 	// 	attr = &RuntimeInvisibleAnnotations{baseAttribute: attrBase}
 	// case "RuntimeVisibleParameterAnnotations":
-	// 	attrBase.attrType = RuntimeVisibleParameterAnnotationsTag
 	// 	attr = &RuntimeVisibleParameterAnnotations{baseAttribute: attrBase}
 	// case "RuntimeInvisibleParameterAnnotations":
-	// 	attrBase.attrType = RuntimeInvisibleParameterAnnotationsTag
 	// 	attr = &RuntimeInvisibleParameterAnnotations{baseAttribute: attrBase}
 	// case "AnnotationDefault":
-	// 	attrBase.attrType = AnnotationDefaultTag
 	// 	attr = &AnnotationDefault{baseAttribute: attrBase}
 	case "BootstrapMethods":
-		attrBase.attrType = BootstrapMethodsTag
 		attr = &BootstrapMethods{baseAttribute: attrBase}
 	default:
-		attrBase.attrType = UnknownTag
 		attr = &UnknownAttr{baseAttribute: attrBase}
 	}
 
@@ -138,13 +118,8 @@ func fillAttribute(r io.Reader, attrBase baseAttribute, constPool ConstantPool) 
 type AttributeType uint8
 
 type baseAttribute struct {
-	attrType  AttributeType
 	NameIndex ConstPoolIndex
-	Length    uint16
-}
-
-func (b baseAttribute) GetTag() AttributeType {
-	return b.attrType
+	Length    uint32
 }
 
 func (_ baseAttribute) UnknownAttr() *UnknownAttr     { panic("jclass: value is not UnknownAttr") }
@@ -197,10 +172,19 @@ type UnknownAttr struct {
 }
 
 func (a *UnknownAttr) UnknownAttr() *UnknownAttr { return a }
+func (_ *UnknownAttr) GetTag() AttributeType     { return UnknownTag }
 
 func (a *UnknownAttr) Read(r io.Reader, _ ConstantPool) error {
+	fmt.Println("found unknown attribute")
 	a.Data = make([]uint8, a.Length)
 	return binary.Read(r, byteOrder, a.Data)
+}
+
+func (a *UnknownAttr) Dump(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, a.baseAttribute),
+		binary.Write(w, byteOrder, a.Data),
+	})
 }
 
 // field_info, may single
@@ -211,12 +195,13 @@ type ConstantValue struct {
 }
 
 func (a *ConstantValue) ConstantValue() *ConstantValue { return a }
+func (_ *ConstantValue) GetTag() AttributeType         { return ConstantValueTag }
 
 func (a *ConstantValue) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, &a.Index)
 }
 
-func (a *ConstantValue) Dump(w io.Writer) error { return nil }
+func (a *ConstantValue) Dump(w io.Writer) error { return binary.Write(w, byteOrder, a) }
 
 // method_info, single
 // not if native or abstract
@@ -242,7 +227,8 @@ type CodeException struct {
 	CatchType ConstPoolIndex
 }
 
-func (a *Code) Code() *Code { return a }
+func (a *Code) Code() *Code           { return a }
+func (_ *Code) GetTag() AttributeType { return CodeTag }
 
 func (a *Code) Read(r io.Reader, constPool ConstantPool) error {
 	var err error
@@ -279,6 +265,19 @@ func (a *Code) Read(r io.Reader, constPool ConstantPool) error {
 	return err
 }
 
+func (a *Code) Dump(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, a.baseAttribute),
+		binary.Write(w, byteOrder, a.MaxStackSize),
+		binary.Write(w, byteOrder, a.MaxLocalsCount),
+		binary.Write(w, byteOrder, uint32(len(a.ByteCode))),
+		binary.Write(w, byteOrder, a.ByteCode),
+		binary.Write(w, byteOrder, uint16(len(a.ExceptionsTable))),
+		binary.Write(w, byteOrder, a.ExceptionsTable),
+		writeAttributes(w, a.Attributes),
+	})
+}
+
 type StackMapTable struct {
 	baseAttribute
 }
@@ -292,6 +291,7 @@ type Exceptions struct {
 }
 
 func (a *Exceptions) Exceptions() *Exceptions { return a }
+func (_ *Exceptions) GetTag() AttributeType   { return ExceptionsTag }
 
 func (a *Exceptions) Read(r io.Reader, _ ConstantPool) error {
 	var exceptionsCount uint16
@@ -302,6 +302,14 @@ func (a *Exceptions) Read(r io.Reader, _ ConstantPool) error {
 
 	a.ExceptionsTable = make([]ConstPoolIndex, exceptionsCount)
 	return binary.Read(r, byteOrder, a.ExceptionsTable)
+}
+
+func (a *Exceptions) Dump(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, a.baseAttribute),
+		binary.Write(w, byteOrder, uint16(len(a.ExceptionsTable))),
+		binary.Write(w, byteOrder, a.ExceptionsTable),
+	})
 }
 
 // ClassFile, may single
@@ -318,6 +326,7 @@ type InnerClass struct {
 }
 
 func (a *InnerClasses) InnerClasses() *InnerClasses { return a }
+func (_ *InnerClasses) GetTag() AttributeType       { return InnerClassesTag }
 
 func (a *InnerClasses) Read(r io.Reader, _ ConstantPool) error {
 	var classesCount uint16
@@ -330,6 +339,14 @@ func (a *InnerClasses) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, a.Classes)
 }
 
+func (a *InnerClasses) Dump(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, a.baseAttribute),
+		binary.Write(w, byteOrder, uint16(len(a.Classes))),
+		binary.Write(w, byteOrder, a.Classes),
+	})
+}
+
 // ClassFile, may single
 // iff local class or anonymous class
 type EnclosingMethod struct {
@@ -339,6 +356,7 @@ type EnclosingMethod struct {
 }
 
 func (a *EnclosingMethod) EnclosingMethod() *EnclosingMethod { return a }
+func (_ *EnclosingMethod) GetTag() AttributeType             { return EnclosingMethodTag }
 
 func (a *EnclosingMethod) Read(r io.Reader, _ ConstantPool) error {
 	return multiError([]error{
@@ -347,13 +365,17 @@ func (a *EnclosingMethod) Read(r io.Reader, _ ConstantPool) error {
 	})
 }
 
+func (a *EnclosingMethod) Dump(w io.Writer) error { return binary.Write(w, byteOrder, a) }
+
 // ClassFile, method_info or field_info, may single
 // if compiler generated
 // instead maybe: ACC_SYNTHETIC
 type Synthetic struct{ baseAttribute }
 
 func (a *Synthetic) Synthetic() *Synthetic                  { return a }
+func (_ *Synthetic) GetTag() AttributeType                  { return SyntheticTag }
 func (_ *Synthetic) Read(_ io.Reader, _ ConstantPool) error { return nil }
+func (a *Synthetic) Dump(w io.Writer) error                 { return binary.Write(w, byteOrder, a) }
 
 // ClassFile, field_info, or method_info, may single
 type Signature struct {
@@ -362,10 +384,13 @@ type Signature struct {
 }
 
 func (a *Signature) Signature() *Signature { return a }
+func (_ *Signature) GetTag() AttributeType { return SignatureTag }
 
 func (a *Signature) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, &a.SignatureIndex)
 }
+
+func (a *Signature) Dump(w io.Writer) error { return binary.Write(w, byteOrder, a) }
 
 // ClassFile, may single
 type SourceFile struct {
@@ -374,10 +399,13 @@ type SourceFile struct {
 }
 
 func (a *SourceFile) SourceFile() *SourceFile { return a }
+func (_ *SourceFile) GetTag() AttributeType   { return SourceFileTag }
 
 func (a *SourceFile) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, &a.SourceFileIndex)
 }
+
+func (a *SourceFile) Dump(w io.Writer) error { return binary.Write(w, byteOrder, a) }
 
 // ClassFile, may single
 type SourceDebugExtension struct {
@@ -386,6 +414,7 @@ type SourceDebugExtension struct {
 }
 
 func (a *SourceDebugExtension) SourceDebugExtension() *SourceDebugExtension { return a }
+func (_ *SourceDebugExtension) GetTag() AttributeType                       { return SourceDebugExtensionTag }
 
 func (a *SourceDebugExtension) Read(r io.Reader, _ ConstantPool) error {
 	var err error
@@ -407,6 +436,15 @@ func (a *SourceDebugExtension) Read(r io.Reader, _ ConstantPool) error {
 	return nil
 }
 
+func (a *SourceDebugExtension) Dump(w io.Writer) error {
+	err := binary.Write(w, byteOrder, uint16(len(a.DebugExtension)))
+	if err != nil {
+		return err
+	}
+
+	return binary.Write(w, byteOrder, []byte(a.DebugExtension))
+}
+
 // Code, may multiple
 type LineNumberTable struct {
 	baseAttribute
@@ -419,6 +457,7 @@ type LineNumber struct {
 }
 
 func (a *LineNumberTable) LineNumberTable() *LineNumberTable { return a }
+func (_ *LineNumberTable) GetTag() AttributeType             { return LineNumberTableTag }
 
 func (a *LineNumberTable) Read(r io.Reader, _ ConstantPool) error {
 	var linesCount uint16
@@ -429,6 +468,14 @@ func (a *LineNumberTable) Read(r io.Reader, _ ConstantPool) error {
 
 	a.Table = make([]LineNumber, linesCount)
 	return binary.Read(r, byteOrder, a.Table)
+}
+
+func (a *LineNumberTable) Dump(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, a.baseAttribute),
+		binary.Write(w, byteOrder, uint16(len(a.Table))),
+		binary.Write(w, byteOrder, a.Table),
+	})
 }
 
 // Code, may multiple
@@ -447,6 +494,7 @@ type LocalVariable struct {
 }
 
 func (a *LocalVariableTable) LocalVariableTable() *LocalVariableTable { return a }
+func (_ *LocalVariableTable) GetTag() AttributeType                   { return LocalVariableTableTag }
 
 func (a *LocalVariableTable) Read(r io.Reader, _ ConstantPool) error {
 	var varsCount uint16
@@ -457,6 +505,14 @@ func (a *LocalVariableTable) Read(r io.Reader, _ ConstantPool) error {
 
 	a.Table = make([]LocalVariable, varsCount)
 	return binary.Read(r, byteOrder, a.Table)
+}
+
+func (a *LocalVariableTable) Dump(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, a.baseAttribute),
+		binary.Write(w, byteOrder, uint16(len(a.Table))),
+		binary.Write(w, byteOrder, a.Table),
+	})
 }
 
 // Code, may multiple
@@ -475,6 +531,7 @@ type LocalVariableType struct {
 }
 
 func (a *LocalVariableTypeTable) LocalVariableTypeTable() *LocalVariableTypeTable { return a }
+func (_ *LocalVariableTypeTable) GetTag() AttributeType                           { return LocalVariableTypeTableTag }
 
 func (a *LocalVariableTypeTable) Read(r io.Reader, _ ConstantPool) error {
 	var varsCount uint16
@@ -487,11 +544,21 @@ func (a *LocalVariableTypeTable) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, a.Table)
 }
 
+func (a *LocalVariableTypeTable) Dump(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, a.baseAttribute),
+		binary.Write(w, byteOrder, uint16(len(a.Table))),
+		binary.Write(w, byteOrder, a.Table),
+	})
+}
+
 // ClassFile, field_info, or method_info, may single
 type Deprecated struct{ baseAttribute }
 
 func (a *Deprecated) Deprecated() *Deprecated                { return a }
+func (_ *Deprecated) GetTag() AttributeType                  { return DeprecatedTag }
 func (_ *Deprecated) Read(r io.Reader, _ ConstantPool) error { return nil }
+func (a *Deprecated) Dump(w io.Writer) error                 { return binary.Write(w, byteOrder, a) }
 
 type RuntimeVisibleAnnotations struct {
 	baseAttribute
@@ -542,6 +609,7 @@ type BootstrapMethod struct {
 }
 
 func (a *BootstrapMethods) BootstrapMethods() *BootstrapMethods { return a }
+func (_ *BootstrapMethods) GetTag() AttributeType               { return BootstrapMethodsTag }
 
 func (a *BootstrapMethods) Read(r io.Reader, _ ConstantPool) error {
 	var methodsCount uint16
@@ -565,6 +633,25 @@ func (a *BootstrapMethods) Read(r io.Reader, _ ConstantPool) error {
 	return nil
 }
 
+func (a *BootstrapMethods) Dump(w io.Writer) error {
+	err := multiError([]error{
+		binary.Write(w, byteOrder, a.baseAttribute),
+		binary.Write(w, byteOrder, uint16(len(a.Methods))),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, method := range a.Methods {
+		err := method.dump(w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (a *BootstrapMethod) read(r io.Reader) error {
 	var err error
 
@@ -581,4 +668,12 @@ func (a *BootstrapMethod) read(r io.Reader) error {
 
 	a.Args = make([]ConstPoolIndex, argsCount)
 	return binary.Read(r, byteOrder, a.Args)
+}
+
+func (a *BootstrapMethod) dump(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, a.MethodRef),
+		binary.Write(w, byteOrder, uint16(len(a.Args))),
+		binary.Write(w, byteOrder, a.Args),
+	})
 }
