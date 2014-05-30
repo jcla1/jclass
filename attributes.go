@@ -131,12 +131,63 @@ func (b baseAttribute) GetTag() AttributeType {
 	return b.attrType
 }
 
+func (_ baseAttribute) ConstantValue() *ConstantValue { panic("jclass: value is not ConstantValue") }
+func (_ baseAttribute) Code() *Code                   { panic("jclass: value is not Code") }
+func (_ baseAttribute) StackMapTable() *StackMapTable { panic("jclass: value is not StackMapTable") }
+func (_ baseAttribute) Exceptions() *Exceptions       { panic("jclass: value is not Exceptions") }
+func (_ baseAttribute) InnerClasses() *InnerClasses   { panic("jclass: value is not InnerClasses") }
+func (_ baseAttribute) EnclosingMethod() *EnclosingMethod {
+	panic("jclass: value is not EnclosingMethod")
+}
+func (_ baseAttribute) Synthetic() *Synthetic   { panic("jclass: value is not Synthetic") }
+func (_ baseAttribute) Signature() *Signature   { panic("jclass: value is not Signature") }
+func (_ baseAttribute) SourceFile() *SourceFile { panic("jclass: value is not SourceFile") }
+func (_ baseAttribute) SourceDebugExtension() *SourceDebugExtension {
+	panic("jclass: value is not SourceDebugExtension")
+}
+func (_ baseAttribute) LineNumberTable() *LineNumberTable {
+	panic("jclass: value is not LineNumberTable")
+}
+func (_ baseAttribute) LocalVariableTable() *LocalVariableTable {
+	panic("jclass: value is not LocalVariableTable")
+}
+func (_ baseAttribute) LocalVariableTypeTable() *LocalVariableTypeTable {
+	panic("jclass: value is not LocalVariableTypeTable")
+}
+func (_ baseAttribute) Deprecated() *Deprecated { panic("jclass: value is not Deprecated") }
+func (_ baseAttribute) RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations {
+	panic("jclass: value is not RuntimeVisibleAnnotations")
+}
+func (_ baseAttribute) RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations {
+	panic("jclass: value is not RuntimeInvisibleAnnotations")
+}
+func (_ baseAttribute) RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations {
+	panic("jclass: value is not RuntimeVisibleParameterAnnotations")
+}
+func (_ baseAttribute) RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations {
+	panic("jclass: value is not RuntimeInvisibleParameterAnnotations")
+}
+func (_ baseAttribute) AnnotationDefault() *AnnotationDefault {
+	panic("jclass: value is not AnnotationDefault")
+}
+func (_ baseAttribute) BootstrapMethods() *BootstrapMethods {
+	panic("jclass: value is not BootstrapMethods")
+}
+
 // field_info, may single
 // ACC_STATIC only
 type ConstantValue struct {
 	baseAttribute
 	Index ConstPoolIndex
 }
+
+func (a *ConstantValue) ConstantValue() *ConstantValue { return a }
+
+func (a *ConstantValue) Read(r io.Reader, constPool ConstantPool) error {
+	return binary.Read(r, byteOrder, &a.Index)
+}
+
+func (a *ConstantValue) Dump(w io.Writer) error { return nil }
 
 // method_info, single
 // not if native or abstract
@@ -146,33 +197,82 @@ type Code struct {
 	MaxStackSize   uint16
 	MaxLocalsCount uint16
 
-	CodeLength uint32
-	Code       []uint8
-
-	ExceptionsCount uint16
-	Exceptions      []struct {
-		StartPC   uint16
-		EndPC     uint16
-		HandlerPC uint16
-		// may be zero, then used for finally
-		CatchType ConstPoolIndex
-	}
+	ByteCode        []uint8
+	ExceptionsTable []CodeExceptions
 
 	// only LineNumberTable, LocalVariableTable,
 	// LocalVariableTypeTable, StackMapTable
-	AttributesCount uint16
 	Attributes
+}
+
+type CodeExceptions struct {
+	StartPC   uint16
+	EndPC     uint16
+	HandlerPC uint16
+	// may be zero, then used for finally
+	CatchType ConstPoolIndex
+}
+
+func (a *Code) Code() *Code { return a }
+
+func (a *Code) Read(r io.Reader, constPool ConstantPool) error {
+	var err error
+
+	var codeLen uint32
+	err = multiError([]error{
+		binary.Read(r, byteOrder, &a.MaxStackSize),
+		binary.Read(r, byteOrder, &a.MaxLocalsCount),
+		binary.Read(r, byteOrder, &codeLen),
+	})
+	if err != nil {
+		return err
+	}
+
+	a.ByteCode = make([]uint8, codeLen)
+	err = binary.Read(r, byteOrder, a.ByteCode)
+	if err != nil {
+		return err
+	}
+
+	var exceptionsCount uint16
+	err = binary.Read(r, byteOrder, &exceptionsCount)
+	if err != nil {
+		return err
+	}
+
+	a.Exceptions = make([]CodeException, exceptionsCount)
+	err = binary.Read(r, byteOrder, a.Exceptions)
+	if err != nil {
+		return err
+	}
+
+	a.Attributes, err = readAttributes(r, constPool)
+	return err
 }
 
 type StackMapTable struct {
 	baseAttribute
 }
 
+func (a *StackMapTable) StackMapTable() *StackMapTable { return a }
+
 // method_info, may single
 type Exceptions struct {
 	baseAttribute
-	ExceptionsCount uint16
-	Exceptions      []ConstPoolIndex
+	ExceptionsTable []ConstPoolIndex
+}
+
+func (a *Exceptions) Exceptions() *Exceptions { return a }
+
+func (a *Exceptions) Read(r io.Reader, _ ConstantPool) error {
+	var exceptionsCount uint16
+	err := binary.Read(r, byteOrder, &exceptionsCount)
+	if err != nil {
+		return err
+	}
+
+	a.ExceptionsTable = make([]ConstPoolIndex, exceptionsCount)
+	return binary.Read(r, byteOrder, a.ExceptionsTable)
 }
 
 // ClassFile, may single
@@ -188,6 +288,8 @@ type InnerClasses struct {
 	}
 }
 
+func (_ *InnerClasses) InnerClasses() *InnerClasses { return a }
+
 // ClassFile, may single
 // iff local class or anonymous class
 type EnclosingMethod struct {
@@ -196,10 +298,14 @@ type EnclosingMethod struct {
 	MethodIndex ConstPoolIndex
 }
 
+func (_ *EnclosingMethod) EnclosingMethod() *EnclosingMethod { return a }
+
 // ClassFile, method_info or field_info, may single
 // if compiler generated
 // instead maybe: ACC_SYNTHETIC
 type Synthetic baseAttribute
+
+func (_ *Synthetic) Synthetic() *Synthetic { return a }
 
 // ClassFile, field_info, or method_info, may single
 type Signature struct {
@@ -207,17 +313,23 @@ type Signature struct {
 	SignatureIndex ConstPoolIndex
 }
 
+func (_ *Signature) Signature() *Signature { return a }
+
 // ClassFile, may single
 type SourceFile struct {
 	baseAttribute
 	SourceFileIndex ConstPoolIndex
 }
 
+func (_ *SourceFile) SourceFile() *SourceFile { return a }
+
 // ClassFile, may single
 type SourceDebugExtension struct {
 	baseAttribute
 	DebugExtension string
 }
+
+func (_ *SourceDebugExtension) SourceDebugExtension() *SourceDebugExtension { return a }
 
 // Code, may multiple
 type LineNumberTable struct {
@@ -228,6 +340,8 @@ type LineNumberTable struct {
 		LineNumber uint16
 	}
 }
+
+func (_ *LineNumberTable) LineNumberTable() *LineNumberTable { return a }
 
 // Code, may multiple
 type LocalVariableTable struct {
@@ -243,6 +357,8 @@ type LocalVariableTable struct {
 	}
 }
 
+func (_ *LocalVariableTable) LocalVariableTable() *LocalVariableTable { return a }
+
 // Code, may multiple
 type LocalVariableTypeTable struct {
 	baseAttribute
@@ -257,28 +373,48 @@ type LocalVariableTypeTable struct {
 	}
 }
 
+func (_ *LocalVariableTypeTable) LocalVariableTypeTable() *LocalVariableTypeTable { return a }
+
 // ClassFile, field_info, or method_info, may single
 type Deprecated baseAttribute
+
+func (_ *Deprecated) Deprecated() *Deprecated { return a }
 
 type RuntimeVisibleAnnotations struct {
 	baseAttribute
 }
 
+func (_ *RuntimeVisibleAnnotations) RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations { return a }
+
 type RuntimeInvisibleAnnotations struct {
 	baseAttribute
+}
+
+func (_ *RuntimeInvisibleAnnotations) RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations {
+	return a
 }
 
 type RuntimeVisibleParameterAnnotations struct {
 	baseAttribute
 }
 
+func (_ *RuntimeVisibleParameterAnnotations) RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations {
+	return a
+}
+
 type RuntimeInvisibleParameterAnnotations struct {
 	baseAttribute
+}
+
+func (_ *RuntimeInvisibleParameterAnnotations) RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations {
+	return a
 }
 
 type AnnotationDefault struct {
 	baseAttribute
 }
+
+func (_ *AnnotationDefault) AnnotationDefault() *AnnotationDefault { return a }
 
 // ClassFile, may single
 // iff constpool conatains CONSTANT_InvokeDynamic_info
@@ -291,3 +427,5 @@ type BootstrapMethods struct {
 		Args      []ConstPoolIndex
 	}
 }
+
+func (_ *BootstrapMethods) BootstrapMethods() *BootstrapMethods { return a }

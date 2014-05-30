@@ -80,7 +80,7 @@ type Dumper interface {
 
 type Attribute interface {
 	Reader
-	Dumper
+	// Dumper
 
 	GetTag() AttributeType
 
