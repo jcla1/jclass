@@ -53,14 +53,14 @@ type ClassFile struct {
 	// description of a field in this class or interface.
 	// The Fields table only contains fields declared in
 	// this class or interface, not any inherited ones.
-	Fields []*FieldInfo
+	Fields []*Field
 
 	// Methods contains method_info structs describing
 	// a method of this class or interface.
 	// If neiter METHOD_ACC_NATIVE or METHOD_ACC_ABSTRACT
 	// flags are set, the corresponding code for the method
 	// will also be supplied.
-	Methods []*MethodInfo
+	Methods []*Method
 
 	// Attributes describes properties of this class or
 	// interface through attribute_info structs.

@@ -5,23 +5,23 @@ import (
 	"io"
 )
 
-type FieldInfo struct {
-	fieldMethodInfo
+type Field struct {
+	fieldMethod
 }
 
-type MethodInfo struct {
-	fieldMethodInfo
+type Method struct {
+	fieldMethod
 }
 
-type fieldMethodInfo struct {
+type fieldMethod struct {
 	AccessFlags
 	NameIndex       ConstPoolIndex
 	DescriptorIndex ConstPoolIndex
 	Attributes
 }
 
-func readFieldMethod(r io.Reader, constPool ConstantPool) (*fieldMethodInfo, error) {
-	fom := &fieldMethodInfo{}
+func readFieldMethod(r io.Reader, constPool ConstantPool) (*fieldMethod, error) {
+	fom := &fieldMethod{}
 
 	err := multiError([]error{
 		binary.Read(r, byteOrder, &fom.AccessFlags),
@@ -41,7 +41,7 @@ func readFieldMethod(r io.Reader, constPool ConstantPool) (*fieldMethodInfo, err
 	return fom, nil
 }
 
-func (fom fieldMethodInfo) Dump(w io.Writer) error {
+func (fom fieldMethod) Dump(w io.Writer) error {
 	return multiError([]error{
 		binary.Write(w, byteOrder, fom.AccessFlags),
 		binary.Write(w, byteOrder, fom.NameIndex),

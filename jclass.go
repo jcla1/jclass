@@ -142,7 +142,7 @@ func (c *ClassFile) readFields(r io.Reader) error {
 		return err
 	}
 
-	c.Fields = make([]*FieldInfo, 0, count)
+	c.Fields = make([]*Field, 0, count)
 
 	for i := uint16(0); i < count; i++ {
 		fieldMethod, err := readFieldMethod(r, c.ConstantPool)
@@ -150,7 +150,7 @@ func (c *ClassFile) readFields(r io.Reader) error {
 			return err
 		}
 
-		field := &FieldInfo{*fieldMethod}
+		field := &Field{*fieldMethod}
 		c.Fields = append(c.Fields, field)
 	}
 
@@ -180,7 +180,7 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 		return err
 	}
 
-	c.Methods = make([]*MethodInfo, 0, count)
+	c.Methods = make([]*Method, 0, count)
 
 	for i := uint16(0); i < count; i++ {
 		fieldMethod, err := readFieldMethod(r, c.ConstantPool)
@@ -188,7 +188,7 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 			return err
 		}
 
-		method := &MethodInfo{*fieldMethod}
+		method := &Method{*fieldMethod}
 		c.Methods = append(c.Methods, method)
 	}
 
