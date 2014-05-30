@@ -317,7 +317,10 @@ func (c *UTF8Ref) Read(r io.Reader) error {
 }
 
 func (c *UTF8Ref) Dump(w io.Writer) error {
-	err := binary.Write(w, byteOrder, uint16(len(c.Value)))
+	err := multiError([]error{
+		binary.Write(w, byteOrder, c.baseConstant),
+		binary.Write(w, byteOrder, uint16(len(c.Value))),
+	})
 	if err != nil {
 		return err
 	}

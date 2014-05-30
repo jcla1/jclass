@@ -2,7 +2,6 @@ package class
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
 )
 
@@ -175,7 +174,6 @@ func (a *UnknownAttr) UnknownAttr() *UnknownAttr { return a }
 func (_ *UnknownAttr) GetTag() AttributeType     { return UnknownTag }
 
 func (a *UnknownAttr) Read(r io.Reader, _ ConstantPool) error {
-	fmt.Println("found unknown attribute")
 	a.Data = make([]uint8, a.Length)
 	return binary.Read(r, byteOrder, a.Data)
 }
