@@ -84,6 +84,7 @@ type Attribute interface {
 
 	GetTag() AttributeType
 
+	UnknownAttr() *UnknownAttr
 	ConstantValue() *ConstantValue
 	Code() *Code
 	// StackMapTable() *StackMapTable

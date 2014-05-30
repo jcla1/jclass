@@ -131,6 +131,7 @@ func (b baseAttribute) GetTag() AttributeType {
 	return b.attrType
 }
 
+func (_ baseAttribute) UnknownAttr() *UnknownAttr     { panic("jclass: value is not UnknownAttr") }
 func (_ baseAttribute) ConstantValue() *ConstantValue { panic("jclass: value is not ConstantValue") }
 func (_ baseAttribute) Code() *Code                   { panic("jclass: value is not Code") }
 func (_ baseAttribute) StackMapTable() *StackMapTable { panic("jclass: value is not StackMapTable") }
@@ -174,6 +175,18 @@ func (_ baseAttribute) BootstrapMethods() *BootstrapMethods {
 	panic("jclass: value is not BootstrapMethods")
 }
 
+type UnknownAttr struct {
+	baseAttribute
+	Data []uint8
+}
+
+func (a *UnknownAttr) UnknownAttr() *UnknownAttr { return a }
+
+func (a *UnknownAttr) Read(r io.Reader, _ ConstantPool) error {
+	a.Data = make([]uint8, a.Length)
+	return binary.Read(r, byteOrder, a.Data)
+}
+
 // field_info, may single
 // ACC_STATIC only
 type ConstantValue struct {
@@ -183,7 +196,7 @@ type ConstantValue struct {
 
 func (a *ConstantValue) ConstantValue() *ConstantValue { return a }
 
-func (a *ConstantValue) Read(r io.Reader, constPool ConstantPool) error {
+func (a *ConstantValue) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, &a.Index)
 }
 
@@ -198,14 +211,14 @@ type Code struct {
 	MaxLocalsCount uint16
 
 	ByteCode        []uint8
-	ExceptionsTable []CodeExceptions
+	ExceptionsTable []CodeException
 
 	// only LineNumberTable, LocalVariableTable,
 	// LocalVariableTypeTable, StackMapTable
 	Attributes
 }
 
-type CodeExceptions struct {
+type CodeException struct {
 	StartPC   uint16
 	EndPC     uint16
 	HandlerPC uint16
@@ -240,7 +253,7 @@ func (a *Code) Read(r io.Reader, constPool ConstantPool) error {
 		return err
 	}
 
-	a.Exceptions = make([]CodeException, exceptionsCount)
+	a.ExceptionsTable = make([]CodeException, exceptionsCount)
 	err = binary.Read(r, byteOrder, a.Exceptions)
 	if err != nil {
 		return err
@@ -288,7 +301,7 @@ type InnerClass struct {
 	InnerAccessFlags AccessFlags
 }
 
-func (_ *InnerClasses) InnerClasses() *InnerClasses { return a }
+func (a *InnerClasses) InnerClasses() *InnerClasses { return a }
 
 func (a *InnerClasses) Read(r io.Reader, _ ConstantPool) error {
 	var classesCount uint16
@@ -309,7 +322,7 @@ type EnclosingMethod struct {
 	MethodIndex ConstPoolIndex
 }
 
-func (_ *EnclosingMethod) EnclosingMethod() *EnclosingMethod { return a }
+func (a *EnclosingMethod) EnclosingMethod() *EnclosingMethod { return a }
 
 func (a *EnclosingMethod) Read(r io.Reader, _ ConstantPool) error {
 	return multiError([]error{
@@ -323,7 +336,8 @@ func (a *EnclosingMethod) Read(r io.Reader, _ ConstantPool) error {
 // instead maybe: ACC_SYNTHETIC
 type Synthetic struct{ baseAttribute }
 
-func (_ *Synthetic) Synthetic() *Synthetic { return a }
+func (a *Synthetic) Synthetic() *Synthetic                  { return a }
+func (_ *Synthetic) Read(_ io.Reader, _ ConstantPool) error { return nil }
 
 // ClassFile, field_info, or method_info, may single
 type Signature struct {
@@ -331,7 +345,11 @@ type Signature struct {
 	SignatureIndex ConstPoolIndex
 }
 
-func (_ *Signature) Signature() *Signature { return a }
+func (a *Signature) Signature() *Signature { return a }
+
+func (a *Signature) Read(r io.Reader, _ ConstantPool) error {
+	return binary.Read(r, byteOrder, &a.SignatureIndex)
+}
 
 // ClassFile, may single
 type SourceFile struct {
@@ -339,7 +357,11 @@ type SourceFile struct {
 	SourceFileIndex ConstPoolIndex
 }
 
-func (_ *SourceFile) SourceFile() *SourceFile { return a }
+func (a *SourceFile) SourceFile() *SourceFile { return a }
+
+func (a *SourceFile) Read(r io.Reader, _ ConstantPool) error {
+	return binary.Read(r, byteOrder, &a.SourceFileIndex)
+}
 
 // ClassFile, may single
 type SourceDebugExtension struct {
@@ -347,68 +369,125 @@ type SourceDebugExtension struct {
 	DebugExtension string
 }
 
-func (_ *SourceDebugExtension) SourceDebugExtension() *SourceDebugExtension { return a }
+func (a *SourceDebugExtension) SourceDebugExtension() *SourceDebugExtension { return a }
+
+func (a *SourceDebugExtension) Read(r io.Reader, _ ConstantPool) error {
+	var err error
+
+	var length uint32
+	err = binary.Read(r, byteOrder, &length)
+	if err != nil {
+		return err
+	}
+
+	str := make([]uint8, length)
+	err = binary.Read(r, byteOrder, str)
+	if err != nil {
+		return err
+	}
+
+	a.DebugExtension = string(str)
+
+	return nil
+}
 
 // Code, may multiple
 type LineNumberTable struct {
 	baseAttribute
-	TableLength uint16
-	Table       []struct {
-		StartPC    uint16
-		LineNumber uint16
-	}
+	Table []LineNumber
 }
 
-func (_ *LineNumberTable) LineNumberTable() *LineNumberTable { return a }
+type LineNumber struct {
+	StartPC    uint16
+	LineNumber uint16
+}
+
+func (a *LineNumberTable) LineNumberTable() *LineNumberTable { return a }
+
+func (a *LineNumberTable) Read(r io.Reader, _ ConstantPool) error {
+	var linesCount uint16
+	err := binary.Read(r, byteOrder, &linesCount)
+	if err != nil {
+		return err
+	}
+
+	a.Table = make([]LineNumber, linesCount)
+	return binary.Read(r, byteOrder, a.Table)
+}
 
 // Code, may multiple
 type LocalVariableTable struct {
 	baseAttribute
-	TableLength uint16
-	Table       []struct {
-		StartPC         uint16
-		Length          uint16
-		NameIndex       ConstPoolIndex
-		DescriptorIndex ConstPoolIndex
-		// index into local variable array of current frame
-		Index uint16
-	}
+	Table []LocalVariable
 }
 
-func (_ *LocalVariableTable) LocalVariableTable() *LocalVariableTable { return a }
+type LocalVariable struct {
+	StartPC         uint16
+	Length          uint16
+	NameIndex       ConstPoolIndex
+	DescriptorIndex ConstPoolIndex
+	// index into local variable array of current frame
+	Index uint16
+}
+
+func (a *LocalVariableTable) LocalVariableTable() *LocalVariableTable { return a }
+
+func (a *LocalVariableTable) Read(r io.Reader, _ ConstantPool) error {
+	var varsCount uint16
+	err := binary.Read(r, byteOrder, &varsCount)
+	if err != nil {
+		return err
+	}
+
+	a.Table = make([]LocalVariable, varsCount)
+	return binary.Read(r, byteOrder, a.Table)
+}
 
 // Code, may multiple
 type LocalVariableTypeTable struct {
 	baseAttribute
-	TableLength uint16
-	Table       []struct {
-		StartPC        uint16
-		Length         uint16
-		NameIndex      ConstPoolIndex
-		SignatureIndex ConstPoolIndex
-		// index into local variable array of current frame
-		Index uint16
-	}
+	Table []LocalVariableType
 }
 
-func (_ *LocalVariableTypeTable) LocalVariableTypeTable() *LocalVariableTypeTable { return a }
+type LocalVariableType struct {
+	StartPC        uint16
+	Length         uint16
+	NameIndex      ConstPoolIndex
+	SignatureIndex ConstPoolIndex
+	// index into local variable array of current frame
+	Index uint16
+}
+
+func (a *LocalVariableTypeTable) LocalVariableTypeTable() *LocalVariableTypeTable { return a }
+
+func (a *LocalVariableTypeTable) Read(r io.Reader, _ ConstantPool) error {
+	var varsCount uint16
+	err := binary.Read(r, byteOrder, &varsCount)
+	if err != nil {
+		return err
+	}
+
+	a.Table = make([]LocalVariableType, varsCount)
+	return binary.Read(r, byteOrder, a.Table)
+}
 
 // ClassFile, field_info, or method_info, may single
 type Deprecated struct{ baseAttribute }
 
-func (_ *Deprecated) Deprecated() *Deprecated { return a }
+func (a *Deprecated) Deprecated() *Deprecated                { return a }
+func (_ *Deprecated) Read(r io.Reader, _ ConstantPool) error { return nil }
 
 type RuntimeVisibleAnnotations struct {
 	baseAttribute
 }
 
-func (_ *RuntimeVisibleAnnotations) RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations { return a }
+func (a *RuntimeVisibleAnnotations) RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations { return a }
 
 type RuntimeInvisibleAnnotations struct {
 	baseAttribute
 }
 
-func (_ *RuntimeInvisibleAnnotations) RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations {
+func (a *RuntimeInvisibleAnnotations) RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations {
 	return a
 }
 
@@ -416,7 +495,7 @@ type RuntimeVisibleParameterAnnotations struct {
 	baseAttribute
 }
 
-func (_ *RuntimeVisibleParameterAnnotations) RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations {
+func (a *RuntimeVisibleParameterAnnotations) RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations {
 	return a
 }
 
@@ -424,7 +503,7 @@ type RuntimeInvisibleParameterAnnotations struct {
 	baseAttribute
 }
 
-func (_ *RuntimeInvisibleParameterAnnotations) RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations {
+func (a *RuntimeInvisibleParameterAnnotations) RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations {
 	return a
 }
 
@@ -432,18 +511,58 @@ type AnnotationDefault struct {
 	baseAttribute
 }
 
-func (_ *AnnotationDefault) AnnotationDefault() *AnnotationDefault { return a }
+func (a *AnnotationDefault) AnnotationDefault() *AnnotationDefault { return a }
 
 // ClassFile, may single
 // iff constpool conatains CONSTANT_InvokeDynamic_info
 type BootstrapMethods struct {
 	baseAttribute
-	MethodsCount uint16
-	Methods      []struct {
-		MethodRef ConstPoolIndex
-		ArgsCount uint16
-		Args      []ConstPoolIndex
-	}
+	Methods []BootstrapMethod
 }
 
-func (_ *BootstrapMethods) BootstrapMethods() *BootstrapMethods { return a }
+type BootstrapMethod struct {
+	MethodRef ConstPoolIndex
+	Args      []ConstPoolIndex
+}
+
+func (a *BootstrapMethods) BootstrapMethods() *BootstrapMethods { return a }
+
+func (a *BootstrapMethods) Read(r io.Reader, _ ConstantPool) error {
+	var methodsCount uint16
+	err := binary.Read(r, byteOrder, &methodsCount)
+	if err != nil {
+		return err
+	}
+
+	a.Methods = make([]BootstrapMethod, 0, methodsCount)
+
+	for i := uint16(0); i < methodsCount; i++ {
+		method := BootstrapMethod{}
+		err := method.read(r)
+		if err != nil {
+			return err
+		}
+
+		a.Methods = append(a.Methods, method)
+	}
+
+	return nil
+}
+
+func (a *BootstrapMethod) read(r io.Reader) error {
+	var err error
+
+	err = binary.Read(r, byteOrder, &a.MethodRef)
+	if err != nil {
+		return err
+	}
+
+	var argsCount uint16
+	err = binary.Read(r, byteOrder, &a.MethodRef)
+	if err != nil {
+		return err
+	}
+
+	a.Args = make([]ConstPoolIndex, argsCount)
+	return binary.Read(r, byteOrder, a.Args)
+}
