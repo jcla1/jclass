@@ -254,7 +254,7 @@ func (a *Code) Read(r io.Reader, constPool ConstantPool) error {
 	}
 
 	a.ExceptionsTable = make([]CodeException, exceptionsCount)
-	err = binary.Read(r, byteOrder, a.Exceptions)
+	err = binary.Read(r, byteOrder, a.ExceptionsTable)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package class
 
 import (
 	"encoding/binary"
+	// "fmt"
 	"io"
 )
 
@@ -15,7 +16,15 @@ func (c *ClassFile) writeConstPool(w io.Writer) error {
 		return err
 	}
 
-	for _, constant := range c.ConstantPool {
+	for i := uint16(0); i < c.ConstPoolSize-1; i++ {
+		constant := c.ConstantPool[i]
+
+		// In place because of the most annoying spec ever!
+		// For more info, see: readConstPool
+		if constant == nil {
+			continue
+		}
+
 		err := constant.Dump(w)
 		if err != nil {
 			return err
@@ -31,13 +40,15 @@ func (c *ClassFile) readConstPool(r io.Reader) error {
 		return err
 	}
 
-	c.ConstantPool = make(ConstantPool, 0, c.ConstPoolSize)
+	c.ConstantPool = make(ConstantPool, c.ConstPoolSize)
 
 	for i := uint16(1); i < c.ConstPoolSize; i++ {
 		constant, err := readConstant(r)
 		if err != nil {
 			return err
 		}
+
+		c.ConstantPool[i-1] = constant
 
 		// This is one of the WORST! bugs ever!
 		// They even admit it in the JVM spec:
@@ -53,8 +64,6 @@ func (c *ClassFile) readConstPool(r io.Reader) error {
 		if constant.GetTag() == CONSTANT_Long || constant.GetTag() == CONSTANT_Double {
 			i++
 		}
-
-		c.ConstantPool = append(c.ConstantPool, constant)
 	}
 
 	return nil
