@@ -10,6 +10,58 @@ func (constPool ConstantPool) GetUTF8(index ConstPoolIndex) string {
 	return constPool[index-1].UTF8().Value
 }
 
+func (constPool ConstantPool) GetInteger(index ConstPoolIndex) int32 {
+	return constPool[index-1].Integer().Value
+}
+
+func (constPool ConstantPool) GetFloat(index ConstPoolIndex) float32 {
+	return constPool[index-1].Float().Value
+}
+
+func (constPool ConstantPool) GetLong(index ConstPoolIndex) int64 {
+	return constPool[index-1].Long().Value
+}
+
+func (constPool ConstantPool) GetDouble(index ConstPoolIndex) float64 {
+	return constPool[index-1].Double().Value
+}
+
+func (constPool ConstantPool) GetClass(index ConstPoolIndex) *ClassRef {
+	return constPool[index-1].Class()
+}
+
+func (constPool ConstantPool) GetString(index ConstPoolIndex) *StringRef {
+	return constPool[index-1].StringRef()
+}
+
+func (constPool ConstantPool) GetField(index ConstPoolIndex) *FieldRef {
+	return constPool[index-1].Field()
+}
+
+func (constPool ConstantPool) GetMethod(index ConstPoolIndex) *MethodRef {
+	return constPool[index-1].Method()
+}
+
+func (constPool ConstantPool) GetInterfaceMethod(index ConstPoolIndex) *InterfaceMethodRef {
+	return constPool[index-1].InterfaceMethod()
+}
+
+func (constPool ConstantPool) GetNameAndType(index ConstPoolIndex) *NameAndTypeRef {
+	return constPool[index-1].NameAndType()
+}
+
+func (constPool ConstantPool) GetMethodHandle(index ConstPoolIndex) *MethodHandleRef {
+	return constPool[index-1].MethodHandle()
+}
+
+func (constPool ConstantPool) GetMethodType(index ConstPoolIndex) *MethodTypeRef {
+	return constPool[index-1].MethodType()
+}
+
+func (constPool ConstantPool) GetInvokeDynamic(index ConstPoolIndex) *InvokeDynamicRef {
+	return constPool[index-1].InvokeDynamic()
+}
+
 func (c *ClassFile) writeConstPool(w io.Writer) error {
 	err := binary.Write(w, byteOrder, c.ConstPoolSize)
 	if err != nil {
