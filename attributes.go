@@ -43,7 +43,7 @@ func readAttribute(r io.Reader, constPool ConstantPool) (Attribute, error) {
 
 func fillAttribute(r io.Reader, attrBase baseAttribute, constPool ConstantPool) (Attribute, error) {
 	var attr Attribute
-	name := constPool.GetString(attrBase.NameIndex)
+	name := constPool.GetUTF8(attrBase.NameIndex)
 
 	switch name {
 	case "ConstantValue":

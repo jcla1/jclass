@@ -5,10 +5,105 @@ import (
 	"io"
 )
 
+func (constPool ConstantPool) GetUTF8(index ConstPoolIndex) string {
+	return constPool[index-1].UTF8().Value
+}
+
+func (c *ClassFile) readConstPool(r io.Reader) error {
+	var count uint16
+	err := binary.Read(r, byteOrder, &count)
+	if err != nil {
+		return err
+	}
+
+	c.ConstantPool = make(ConstantPool, 0, count)
+
+	for i := uint16(1); i < count; i++ {
+		constant, err := readConstant(r)
+		if err != nil {
+			return err
+		}
+
+		// This is one of the WORST! bugs ever!
+		// They even admit it in the JVM spec:
+		//
+		// "In retrospect, making 8-byte constants
+		// take two constant pool entries was a poor choice."
+		//
+		// The problem is, that both longs & doubles
+		// take up TWO!! slots in the const pool (an it
+		// looks like they take 2 in the local variable
+		// pool too). That's why we need to advance an
+		// extra slot, iff we encounter one of them
+		if constant.GetTag() == CONSTANT_Long || constant.GetTag() == CONSTANT_Double {
+			i++
+		}
+
+		c.ConstantPool = append(c.ConstantPool, constant)
+	}
+
+	return nil
+}
+
+func readConstant(r io.Reader) (Constant, error) {
+	constBase := baseConstant{}
+
+	err := binary.Read(r, byteOrder, &constBase.tag)
+	if err != nil {
+		return nil, err
+	}
+
+	return fillConstant(r, constBase)
+}
+
+func fillConstant(r io.Reader, constBase baseConstant) (Constant, error) {
+	var constant Constant
+
+	switch constBase.GetTag() {
+	case CONSTANT_Class:
+		constant = &ClassRef{baseConstant: constBase}
+	case CONSTANT_FieldRef:
+		constant = &FieldRef{fieldMethodInterfaceRef{baseConstant: constBase}}
+	case CONSTANT_MethodRef:
+		constant = &MethodRef{fieldMethodInterfaceRef{baseConstant: constBase}}
+	case CONSTANT_InterfaceMethodRef:
+		constant = &InterfaceMethodRef{fieldMethodInterfaceRef{baseConstant: constBase}}
+	case CONSTANT_String:
+		constant = &StringRef{baseConstant: constBase}
+	case CONSTANT_Integer:
+		constant = &IntegerRef{baseConstant: constBase}
+	case CONSTANT_Float:
+		constant = &FloatRef{baseConstant: constBase}
+	case CONSTANT_Long:
+		constant = &LongRef{baseConstant: constBase}
+	case CONSTANT_Double:
+		constant = &DoubleRef{baseConstant: constBase}
+	case CONSTANT_NameAndType:
+		constant = &NameAndTypeRef{baseConstant: constBase}
+	case CONSTANT_UTF8:
+		constant = &UTF8Ref{baseConstant: constBase}
+	case CONSTANT_MethodHandle:
+		constant = &MethodHandleRef{baseConstant: constBase}
+	case CONSTANT_MethodType:
+		constant = &MethodTypeRef{baseConstant: constBase}
+	case CONSTANT_InvokeDynamic:
+		constant = &InvokeDynamicRef{baseConstant: constBase}
+	default:
+		panic("jclass: unknown constant pool tag")
+	}
+
+	err := constant.Read(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return constant, nil
+}
+
 type ConstantType uint8
 
 type baseConstant struct {
-	tag uint8
+	tag ConstantType
 }
 
 func (b baseConstant) GetTag() ConstantType {
@@ -58,15 +153,21 @@ func (c *fieldMethodInterfaceRef) Read(r io.Reader) error {
 	})
 }
 
-type FieldRef fieldMethodInterfaceRef
+type FieldRef struct {
+	fieldMethodInterfaceRef
+}
 
 func (c *FieldRef) Field() *FieldRef { return c }
 
-type MethodRef fieldMethodInterfaceRef
+type MethodRef struct {
+	fieldMethodInterfaceRef
+}
 
-func (c *MethodRef) InterfaceMethod() *MethodRef { return c }
+func (c *MethodRef) Method() *MethodRef { return c }
 
-type InterfaceMethodRef fieldMethodInterfaceRef
+type InterfaceMethodRef struct {
+	fieldMethodInterfaceRef
+}
 
 func (c *InterfaceMethodRef) InterfaceMethod() *InterfaceMethodRef { return c }
 
