@@ -278,17 +278,28 @@ func (a *Exceptions) Read(r io.Reader, _ ConstantPool) error {
 // ClassFile, may single
 type InnerClasses struct {
 	baseAttribute
+	Classes []InnerClass
+}
 
-	ClassesCount uint16
-	Classes      []struct {
-		InnerClassIndex  ConstPoolIndex
-		OuterClassIndex  ConstPoolIndex
-		InnerName        ConstPoolIndex
-		InnerAccessFlags AccessFlags
-	}
+type InnerClass struct {
+	InnerClassIndex  ConstPoolIndex
+	OuterClassIndex  ConstPoolIndex
+	InnerName        ConstPoolIndex
+	InnerAccessFlags AccessFlags
 }
 
 func (_ *InnerClasses) InnerClasses() *InnerClasses { return a }
+
+func (a *InnerClasses) Read(r io.Reader, _ ConstantPool) error {
+	var classesCount uint16
+	err := binary.Read(r, byteOrder, &classesCount)
+	if err != nil {
+		return err
+	}
+
+	a.Classes = make([]InnerClass, classesCount)
+	return binary.Read(r, byteOrder, a.Classes)
+}
 
 // ClassFile, may single
 // iff local class or anonymous class
@@ -300,10 +311,17 @@ type EnclosingMethod struct {
 
 func (_ *EnclosingMethod) EnclosingMethod() *EnclosingMethod { return a }
 
+func (a *EnclosingMethod) Read(r io.Reader, _ ConstantPool) error {
+	return multiError([]error{
+		binary.Read(r, byteOrder, &a.ClassIndex),
+		binary.Read(r, byteOrder, &a.MethodIndex),
+	})
+}
+
 // ClassFile, method_info or field_info, may single
 // if compiler generated
 // instead maybe: ACC_SYNTHETIC
-type Synthetic baseAttribute
+type Synthetic struct{ baseAttribute }
 
 func (_ *Synthetic) Synthetic() *Synthetic { return a }
 
@@ -376,7 +394,7 @@ type LocalVariableTypeTable struct {
 func (_ *LocalVariableTypeTable) LocalVariableTypeTable() *LocalVariableTypeTable { return a }
 
 // ClassFile, field_info, or method_info, may single
-type Deprecated baseAttribute
+type Deprecated struct{ baseAttribute }
 
 func (_ *Deprecated) Deprecated() *Deprecated { return a }
 
