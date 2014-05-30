@@ -133,8 +133,13 @@ type ConstantPool []Constant
 type ConstPoolIndex uint16
 type AccessFlags uint16
 
-type FieldInfo fieldMethodInfo
-type MethodInfo fieldMethodInfo
+type FieldInfo struct {
+	fieldMethodInfo
+}
+
+type MethodInfo struct {
+	fieldMethodInfo
+}
 
 type fieldMethodInfo struct {
 	AccessFlags

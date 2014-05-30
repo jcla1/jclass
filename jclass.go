@@ -73,26 +73,21 @@ func (c *ClassFile) readInterfaces(r io.Reader) error {
 }
 
 func (c *ClassFile) readFields(r io.Reader) error {
-	err := binary.Read(r, byteOrder, &c.FieldsCount)
+	var count uint16
+	err := binary.Read(r, byteOrder, &count)
 	if err != nil {
 		return err
 	}
 
-	c.Fields = make([]*FieldInfo, 0, c.FieldsCount)
+	c.Fields = make([]*FieldInfo, 0, count)
 
-	for i := uint16(0); i < c.FieldsCount; i++ {
-		var access AccessFlags
-		err := binary.Read(r, byteOrder, &access)
+	for i := uint16(0); i < count; i++ {
+		fieldMethod, err := readFieldMethod(r, c.ConstantPool)
 		if err != nil {
 			return err
 		}
 
-		fieldOrMethod, err := readFieldOrMethod(r)
-		if err != nil {
-			return err
-		}
-
-		field := &FieldInfo{access, *fieldOrMethod}
+		field := &FieldInfo{*fieldMethod}
 		c.Fields = append(c.Fields, field)
 	}
 
@@ -100,68 +95,51 @@ func (c *ClassFile) readFields(r io.Reader) error {
 }
 
 func (c *ClassFile) readMethods(r io.Reader) error {
-	err := binary.Read(r, byteOrder, &c.MethodsCount)
+	var count uint16
+	err := binary.Read(r, byteOrder, &count)
 	if err != nil {
 		return err
 	}
 
-	c.Methods = make([]*MethodInfo, 0, c.MethodsCount)
+	c.Methods = make([]*MethodInfo, 0, count)
 
-	for i := uint16(0); i < c.MethodsCount; i++ {
-		var access AccessFlags
-		err := binary.Read(r, byteOrder, &access)
+	for i := uint16(0); i < count; i++ {
+		fieldMethod, err := readFieldMethod(r, c.ConstantPool)
 		if err != nil {
 			return err
 		}
 
-		fieldOrMethod, err := readFieldOrMethod(r)
-		if err != nil {
-			return err
-		}
-
-		method := &MethodInfo{access, *fieldOrMethod}
+		method := &MethodInfo{*fieldMethod}
 		c.Methods = append(c.Methods, method)
 	}
 
 	return nil
 }
 
-func readFieldOrMethod(r io.Reader) (*fieldOrMethodInfo, error) {
-	fom := &fieldOrMethodInfo{}
+func readFieldMethod(r io.Reader, constPool ConstantPool) (*fieldMethodInfo, error) {
+	fom := &fieldMethodInfo{}
 
 	err := multiError([]error{
 		binary.Read(r, byteOrder, &fom.NameIndex),
 		binary.Read(r, byteOrder, &fom.DescriptorIndex),
-		binary.Read(r, byteOrder, &fom.AttributesCount),
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	fom.Attributes = make([]*AttributeInfo, 0, fom.AttributesCount)
-
-	for i := uint16(0); i < fom.AttributesCount; i++ {
-		attr, err := readAttribute(r)
-		if err != nil {
-			return nil, err
-		}
-
-		fom.Attributes = append(fom.Attributes, attr)
+	fom.Attributes, err = readAttributes(r, constPool)
+	if err != nil {
+		return nil, err
 	}
 
 	return fom, nil
 }
 
 func (c *ClassFile) readAttributes(r io.Reader) error {
-	attrs, err := readAttributes(r, c.ConstantPool)
-	if err != nil {
-		return err
-	}
-
-	c.Attributes = attrs
-
-	return nil
+	var err error
+	c.Attributes, err = readAttributes(r, c.ConstantPool)
+	return err
 }
 
 // Useful when reading from data stream multiple times
