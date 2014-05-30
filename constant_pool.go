@@ -9,16 +9,31 @@ func (constPool ConstantPool) GetUTF8(index ConstPoolIndex) string {
 	return constPool[index-1].UTF8().Value
 }
 
-func (c *ClassFile) readConstPool(r io.Reader) error {
-	var count uint16
-	err := binary.Read(r, byteOrder, &count)
+func (c *ClassFile) writeConstPool(w io.Writer) error {
+	err := binary.Write(w, byteOrder, c.ConstPoolSize)
 	if err != nil {
 		return err
 	}
 
-	c.ConstantPool = make(ConstantPool, 0, count)
+	for _, constant := range c.ConstantPool {
+		err := constant.Dump(w)
+		if err != nil {
+			return err
+		}
+	}
 
-	for i := uint16(1); i < count; i++ {
+	return nil
+}
+
+func (c *ClassFile) readConstPool(r io.Reader) error {
+	err := binary.Read(r, byteOrder, &c.ConstPoolSize)
+	if err != nil {
+		return err
+	}
+
+	c.ConstantPool = make(ConstantPool, 0, c.ConstPoolSize)
+
+	for i := uint16(1); i < c.ConstPoolSize; i++ {
 		constant, err := readConstant(r)
 		if err != nil {
 			return err

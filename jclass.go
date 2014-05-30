@@ -20,6 +20,19 @@ var initFuncs = []func(*ClassFile, io.Reader) error{
 	(*ClassFile).readAttributes,
 }
 
+var dumpFuncs = []func(*ClassFile, io.Writer) error{
+	(*ClassFile).writeMagic,
+	(*ClassFile).writeVersion,
+	(*ClassFile).writeConstPool,
+	(*ClassFile).writeAccessFlags,
+	(*ClassFile).writeThisClass,
+	(*ClassFile).writeSuperClass,
+	(*ClassFile).writeInterfaces,
+	(*ClassFile).writeFields,
+	(*ClassFile).writeMethods,
+	(*ClassFile).writeAttributes,
+}
+
 // Parse reads a Java class file from r and, on success,
 // returns the parsed struct. Otherwise nil and the error.
 func Parse(r io.Reader) (*ClassFile, error) {
@@ -37,8 +50,30 @@ func Parse(r io.Reader) (*ClassFile, error) {
 	return c, nil
 }
 
+// Dump writes the binary representation of the
+// ClassFile struct to the provied io.Writer
+// When a class file is parsed and then dumped
+// (unmodified), both (files) should be exactly
+// the same.
+func (c *ClassFile) Dump(w io.Writer) error {
+	var err error
+
+	for _, f := range dumpFuncs {
+		err = f(c, w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c *ClassFile) readMagic(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.Magic)
+}
+
+func (c *ClassFile) writeMagic(w io.Writer) error {
+	return binary.Write(w, byteOrder, c.Magic)
 }
 
 func (c *ClassFile) readVersion(r io.Reader) error {
@@ -48,16 +83,35 @@ func (c *ClassFile) readVersion(r io.Reader) error {
 	})
 }
 
+func (c *ClassFile) writeVersion(w io.Writer) error {
+	return multiError([]error{
+		binary.Write(w, byteOrder, c.MinorVersion),
+		binary.Write(w, byteOrder, c.MajorVersion),
+	})
+}
+
 func (c *ClassFile) readAccessFlags(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.AccessFlags)
+}
+
+func (c *ClassFile) writeAccessFlags(w io.Writer) error {
+	return binary.Write(w, byteOrder, c.AccessFlags)
 }
 
 func (c *ClassFile) readThisClass(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.ThisClass)
 }
 
+func (c *ClassFile) writeThisClass(w io.Writer) error {
+	return binary.Write(w, byteOrder, c.ThisClass)
+}
+
 func (c *ClassFile) readSuperClass(r io.Reader) error {
 	return binary.Read(r, byteOrder, &c.SuperClass)
+}
+
+func (c *ClassFile) writeSuperClass(w io.Writer) error {
+	return binary.Write(w, byteOrder, c.SuperClass)
 }
 
 func (c *ClassFile) readInterfaces(r io.Reader) error {
@@ -70,6 +124,15 @@ func (c *ClassFile) readInterfaces(r io.Reader) error {
 	c.Interfaces = make([]ConstPoolIndex, count)
 
 	return binary.Read(r, byteOrder, c.Interfaces)
+}
+
+func (c *ClassFile) writeInterfaces(w io.Writer) error {
+	err := binary.Write(w, byteOrder, len(c.Interfaces))
+	if err != nil {
+		return err
+	}
+
+	return binary.Write(w, byteOrder, c.Interfaces)
 }
 
 func (c *ClassFile) readFields(r io.Reader) error {
@@ -89,6 +152,22 @@ func (c *ClassFile) readFields(r io.Reader) error {
 
 		field := &FieldInfo{*fieldMethod}
 		c.Fields = append(c.Fields, field)
+	}
+
+	return nil
+}
+
+func (c *ClassFile) writeFields(w io.Writer) error {
+	err := binary.Write(w, byteOrder, len(c.Fields))
+	if err != nil {
+		return err
+	}
+
+	for _, field := range c.Fields {
+		err := field.Dump(w)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -116,30 +195,30 @@ func (c *ClassFile) readMethods(r io.Reader) error {
 	return nil
 }
 
-func readFieldMethod(r io.Reader, constPool ConstantPool) (*fieldMethodInfo, error) {
-	fom := &fieldMethodInfo{}
-
-	err := multiError([]error{
-		binary.Read(r, byteOrder, &fom.NameIndex),
-		binary.Read(r, byteOrder, &fom.DescriptorIndex),
-	})
-
+func (c *ClassFile) writeMethods(w io.Writer) error {
+	err := binary.Write(w, byteOrder, len(c.Methods))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	fom.Attributes, err = readAttributes(r, constPool)
-	if err != nil {
-		return nil, err
+	for _, method := range c.Methods {
+		err := method.Dump(w)
+		if err != nil {
+			return err
+		}
 	}
 
-	return fom, nil
+	return nil
 }
 
 func (c *ClassFile) readAttributes(r io.Reader) error {
 	var err error
 	c.Attributes, err = readAttributes(r, c.ConstantPool)
 	return err
+}
+
+func (c *ClassFile) writeAttributes(w io.Writer) error {
+	return writeAttributes(w, c.Attributes)
 }
 
 // Useful when reading from data stream multiple times

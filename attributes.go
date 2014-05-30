@@ -26,6 +26,22 @@ func readAttributes(r io.Reader, constPool ConstantPool) (Attributes, error) {
 	return attrs, nil
 }
 
+func writeAttributes(w io.Writer, attrs Attributes) error {
+	err := binary.Write(w, byteOrder, len(attrs))
+	if err != nil {
+		return err
+	}
+
+	for _, attr := range attrs {
+		err := attr.Dump(w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func readAttribute(r io.Reader, constPool ConstantPool) (Attribute, error) {
 	attrBase := baseAttribute{}
 

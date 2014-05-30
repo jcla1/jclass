@@ -54,16 +54,14 @@ type ClassFile struct {
 	// description of a field in this class or interface.
 	// The Fields table only contains fields declared in
 	// this class or interface, not any inherited ones.
-	FieldsCount uint16
-	Fields      []*FieldInfo
+	Fields []*FieldInfo
 
 	// Methods contains method_info structs describing
 	// a method of this class or interface.
 	// If neiter METHOD_ACC_NATIVE or METHOD_ACC_ABSTRACT
 	// flags are set, the corresponding code for the method
 	// will also be supplied.
-	MethodsCount uint16
-	Methods      []*MethodInfo
+	Methods []*MethodInfo
 
 	// Attributes describes properties of this class or
 	// interface through attribute_info structs.
@@ -132,18 +130,3 @@ type ConstantPool []Constant
 
 type ConstPoolIndex uint16
 type AccessFlags uint16
-
-type FieldInfo struct {
-	fieldMethodInfo
-}
-
-type MethodInfo struct {
-	fieldMethodInfo
-}
-
-type fieldMethodInfo struct {
-	AccessFlags
-	NameIndex       ConstPoolIndex
-	DescriptorIndex ConstPoolIndex
-	Attributes
-}
