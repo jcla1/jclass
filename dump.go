@@ -41,12 +41,10 @@ func (c *ClassFile) writeMagic(w io.Writer) error {
 }
 
 func (c *ClassFile) writeVersion(w io.Writer) error {
-	err := binary.Write(w, byteOrder, c.MinorVersion)
-	if err != nil {
-		return err
-	}
-
-	return binary.Write(w, byteOrder, c.MajorVersion)
+	return multiError([]error{
+		binary.Write(w, byteOrder, c.MinorVersion),
+		binary.Write(w, byteOrder, c.MajorVersion),
+	})
 }
 
 func (c *ClassFile) writeConstPool(w io.Writer) error {

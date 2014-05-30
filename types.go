@@ -70,17 +70,14 @@ type ClassFile struct {
 	Attributes
 }
 
-type Reader interface {
-	Read(io.Reader, ConstantPool) error
-}
-
 type Dumper interface {
 	Dump(io.Writer) error
 }
 
 type Attribute interface {
-	Reader
 	// Dumper
+
+	Read(io.Reader, ConstantPool) error
 
 	GetTag() AttributeType
 
@@ -107,38 +104,41 @@ type Attribute interface {
 	BootstrapMethods() *BootstrapMethods
 }
 
-type Attributes []Attribute
+type Constant interface {
+	// Dumper
 
+	Read(io.Reader) error
+
+	GetTag() ConstantType
+
+	Class() *ClassRef
+	Field() *FieldRef
+	Method() *MethodRef
+	InterfaceMethod() *InterfaceMethodRef
+	StringRef() *StringRef
+	Integer() *IntegerRef
+	Float() *FloatRef
+	Long() *LongRef
+	Double() *DoubleRef
+	NameAndType() *NameAndTypeRef
+	UTF8() *UTF8Ref
+	MethodHandle() *MethodHandleRef
+	MethodType() *MethodTypeRef
+	InvokeDynamic() *InvokeDynamicRef
+}
+
+type Attributes []Attribute
+type ConstantPool []Constant
+
+type ConstPoolIndex uint16
 type AccessFlags uint16
 
-type ConstantPool []*ConstInfo
+type FieldInfo fieldMethodInfo
+type MethodInfo fieldMethodInfo
 
-type FieldInfo struct {
+type fieldMethodInfo struct {
 	AccessFlags
-	fieldOrMethodInfo
-}
-type MethodInfo struct {
-	AccessFlags
-	fieldOrMethodInfo
-}
-
-type fieldOrMethodInfo struct {
 	NameIndex       ConstPoolIndex
 	DescriptorIndex ConstPoolIndex
-	AttributesCount uint16
-	Attributes      []*AttributeInfo
-}
-
-type ConstInfoTag uint8
-type ConstPoolIndex uint16
-
-type ConstInfo struct {
-	Tag  ConstInfoTag
-	Info []uint8
-}
-
-type AttributeInfo struct {
-	NameIndex ConstPoolIndex
-	Length    uint32
-	Info      []uint8
+	Attributes
 }

@@ -6,7 +6,7 @@ package class
 // following bytes can be determined.
 // http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.4-140
 const (
-	CONSTANT_UTF8               ConstInfoTag = 1
+	CONSTANT_UTF8               ConstantType = 1
 	CONSTANT_Integer                         = 3
 	CONSTANT_Float                           = 4
 	CONSTANT_Long                            = 5
