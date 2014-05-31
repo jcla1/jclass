@@ -120,6 +120,13 @@ type Attribute interface {
 	BootstrapMethods() *BootstrapMethods
 }
 
+// Costants reside in a class files constant pool and
+// are used in various places in a class file. They can
+// describe variable or method type signatures names of
+// variables or other classes. The pool also contains all
+// integer and string constants that can be found in the
+// code (besides when the instruction lconst_1 or the like
+// is used).
 type Constant interface {
 	Dumper
 
@@ -127,6 +134,15 @@ type Constant interface {
 
 	GetTag() ConstantType
 
+	// In order to actually access the fields of a constant
+	// you would need a type assertion in your code. But since
+	// the Java spec is quite precise on when you can expect
+	// what type of constant (in a valid class file), we can
+	// provide "safe" implementations of methods for casting
+	// the values, that do not require type assertions.
+	// You shouldn't call any of the following functions if you
+	// aren't sure about what type a Constant actually has,
+	// since if you are wrong, the function will panic.
 	Class() *ClassRef
 	Field() *FieldRef
 	Method() *MethodRef
