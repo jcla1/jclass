@@ -20,6 +20,12 @@ type ClassFile struct {
 	// representing various string constants, class,
 	// interface & field names and other constants that
 	// are referred to in the class file structure.
+	// The reason we keep the ConstPoolSize instead of
+	// just discarding it like with Fields and Methods,
+	// is one of the most annoying bugs I've come across:
+	// In the Java class file format, 64-bit constants
+	// use up two spaces everywhere. So finding the size
+	// of the constant pool is not just len(ConstantPool).
 	ConstPoolSize uint16
 	ConstantPool
 
