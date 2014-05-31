@@ -67,17 +67,36 @@ type ClassFile struct {
 	Attributes
 }
 
+// All Attributes and Constants, plus the actual class file
+// have to fullfill this interface. As you can guess, it's
+// used when writing the class file back to its original
+// (binary) format.
 type Dumper interface {
 	Dump(io.Writer) error
 }
 
+// Attributes add extra/meta info to ClassFile, Field,
+// Method and Code structs. Any JVM implementation or
+// Java compiler, may create its own/new attribute(s).
+// Though these should not effect the sematics of the program.
+// http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7
 type Attribute interface {
 	Dumper
 
 	Read(io.Reader, ConstantPool) error
 
+	// Think of an Attribute value as a discriminated union.
 	GetTag() AttributeType
 
+	// In order to actually access the fields of an attribute
+	// you would need a type assertion in your code. But since
+	// the Java spec is quite precise on when you can expect
+	// what type of attribute (in a valid class file), we can
+	// provide "safe" implementations of methods for casting
+	// the values, that do not require type assertions.
+	// You shouldn't call any of the following functions if you
+	// aren't sure about what type an Attribute actually has,
+	// since if you are wrong, the function will panic.
 	UnknownAttr() *UnknownAttr
 	ConstantValue() *ConstantValue
 	Code() *Code
