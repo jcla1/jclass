@@ -85,6 +85,10 @@ const (
 	NESTED_CLASS_ACC_ENUM                   = 0x4000 // Declared as an enum type.
 )
 
+// These tags describe types of attributes, and can be
+// used to determine what type to cast a generic Attribute
+// to. They have the same use case as the ConstantType tags.
+// http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7-300
 const (
 	UnknownTag AttributeType = iota
 	ConstantValueTag
