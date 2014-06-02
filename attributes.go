@@ -121,47 +121,47 @@ type baseAttribute struct {
 	Length    uint32
 }
 
-func (_ baseAttribute) UnknownAttr() *UnknownAttr     { panic("jclass: value is not UnknownAttr") }
-func (_ baseAttribute) ConstantValue() *ConstantValue { panic("jclass: value is not ConstantValue") }
-func (_ baseAttribute) Code() *Code                   { panic("jclass: value is not Code") }
-func (_ baseAttribute) StackMapTable() *StackMapTable { panic("jclass: value is not StackMapTable") }
-func (_ baseAttribute) Exceptions() *Exceptions       { panic("jclass: value is not Exceptions") }
-func (_ baseAttribute) InnerClasses() *InnerClasses   { panic("jclass: value is not InnerClasses") }
-func (_ baseAttribute) EnclosingMethod() *EnclosingMethod {
+func (a baseAttribute) UnknownAttr() *UnknownAttr     { panic("jclass: value is not UnknownAttr") }
+func (a baseAttribute) ConstantValue() *ConstantValue { panic("jclass: value is not ConstantValue") }
+func (a baseAttribute) Code() *Code                   { panic("jclass: value is not Code") }
+func (a baseAttribute) StackMapTable() *StackMapTable { panic("jclass: value is not StackMapTable") }
+func (a baseAttribute) Exceptions() *Exceptions       { panic("jclass: value is not Exceptions") }
+func (a baseAttribute) InnerClasses() *InnerClasses   { panic("jclass: value is not InnerClasses") }
+func (a baseAttribute) EnclosingMethod() *EnclosingMethod {
 	panic("jclass: value is not EnclosingMethod")
 }
-func (_ baseAttribute) Synthetic() *Synthetic   { panic("jclass: value is not Synthetic") }
-func (_ baseAttribute) Signature() *Signature   { panic("jclass: value is not Signature") }
-func (_ baseAttribute) SourceFile() *SourceFile { panic("jclass: value is not SourceFile") }
-func (_ baseAttribute) SourceDebugExtension() *SourceDebugExtension {
+func (a baseAttribute) Synthetic() *Synthetic   { panic("jclass: value is not Synthetic") }
+func (a baseAttribute) Signature() *Signature   { panic("jclass: value is not Signature") }
+func (a baseAttribute) SourceFile() *SourceFile { panic("jclass: value is not SourceFile") }
+func (a baseAttribute) SourceDebugExtension() *SourceDebugExtension {
 	panic("jclass: value is not SourceDebugExtension")
 }
-func (_ baseAttribute) LineNumberTable() *LineNumberTable {
+func (a baseAttribute) LineNumberTable() *LineNumberTable {
 	panic("jclass: value is not LineNumberTable")
 }
-func (_ baseAttribute) LocalVariableTable() *LocalVariableTable {
+func (a baseAttribute) LocalVariableTable() *LocalVariableTable {
 	panic("jclass: value is not LocalVariableTable")
 }
-func (_ baseAttribute) LocalVariableTypeTable() *LocalVariableTypeTable {
+func (a baseAttribute) LocalVariableTypeTable() *LocalVariableTypeTable {
 	panic("jclass: value is not LocalVariableTypeTable")
 }
-func (_ baseAttribute) Deprecated() *Deprecated { panic("jclass: value is not Deprecated") }
-func (_ baseAttribute) RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations {
+func (a baseAttribute) Deprecated() *Deprecated { panic("jclass: value is not Deprecated") }
+func (a baseAttribute) RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations {
 	panic("jclass: value is not RuntimeVisibleAnnotations")
 }
-func (_ baseAttribute) RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations {
+func (a baseAttribute) RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations {
 	panic("jclass: value is not RuntimeInvisibleAnnotations")
 }
-func (_ baseAttribute) RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations {
+func (a baseAttribute) RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations {
 	panic("jclass: value is not RuntimeVisibleParameterAnnotations")
 }
-func (_ baseAttribute) RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations {
+func (a baseAttribute) RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations {
 	panic("jclass: value is not RuntimeInvisibleParameterAnnotations")
 }
-func (_ baseAttribute) AnnotationDefault() *AnnotationDefault {
+func (a baseAttribute) AnnotationDefault() *AnnotationDefault {
 	panic("jclass: value is not AnnotationDefault")
 }
-func (_ baseAttribute) BootstrapMethods() *BootstrapMethods {
+func (a baseAttribute) BootstrapMethods() *BootstrapMethods {
 	panic("jclass: value is not BootstrapMethods")
 }
 
@@ -171,7 +171,7 @@ type UnknownAttr struct {
 }
 
 func (a *UnknownAttr) UnknownAttr() *UnknownAttr { return a }
-func (_ *UnknownAttr) GetTag() AttributeType     { return UnknownTag }
+func (a *UnknownAttr) GetTag() AttributeType     { return UnknownTag }
 
 func (a *UnknownAttr) Read(r io.Reader, _ ConstantPool) error {
 	a.Data = make([]uint8, a.Length)
@@ -193,7 +193,7 @@ type ConstantValue struct {
 }
 
 func (a *ConstantValue) ConstantValue() *ConstantValue { return a }
-func (_ *ConstantValue) GetTag() AttributeType         { return ConstantValueTag }
+func (a *ConstantValue) GetTag() AttributeType         { return ConstantValueTag }
 
 func (a *ConstantValue) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, &a.Index)
@@ -226,7 +226,7 @@ type CodeException struct {
 }
 
 func (a *Code) Code() *Code           { return a }
-func (_ *Code) GetTag() AttributeType { return CodeTag }
+func (a *Code) GetTag() AttributeType { return CodeTag }
 
 func (a *Code) Read(r io.Reader, constPool ConstantPool) error {
 	var err error
@@ -289,7 +289,7 @@ type Exceptions struct {
 }
 
 func (a *Exceptions) Exceptions() *Exceptions { return a }
-func (_ *Exceptions) GetTag() AttributeType   { return ExceptionsTag }
+func (a *Exceptions) GetTag() AttributeType   { return ExceptionsTag }
 
 func (a *Exceptions) Read(r io.Reader, _ ConstantPool) error {
 	var exceptionsCount uint16
@@ -324,7 +324,7 @@ type InnerClass struct {
 }
 
 func (a *InnerClasses) InnerClasses() *InnerClasses { return a }
-func (_ *InnerClasses) GetTag() AttributeType       { return InnerClassesTag }
+func (a *InnerClasses) GetTag() AttributeType       { return InnerClassesTag }
 
 func (a *InnerClasses) Read(r io.Reader, _ ConstantPool) error {
 	var classesCount uint16
@@ -354,7 +354,7 @@ type EnclosingMethod struct {
 }
 
 func (a *EnclosingMethod) EnclosingMethod() *EnclosingMethod { return a }
-func (_ *EnclosingMethod) GetTag() AttributeType             { return EnclosingMethodTag }
+func (a *EnclosingMethod) GetTag() AttributeType             { return EnclosingMethodTag }
 
 func (a *EnclosingMethod) Read(r io.Reader, _ ConstantPool) error {
 	return multiError([]error{
@@ -371,8 +371,8 @@ func (a *EnclosingMethod) Dump(w io.Writer) error { return binary.Write(w, byteO
 type Synthetic struct{ baseAttribute }
 
 func (a *Synthetic) Synthetic() *Synthetic                  { return a }
-func (_ *Synthetic) GetTag() AttributeType                  { return SyntheticTag }
-func (_ *Synthetic) Read(_ io.Reader, _ ConstantPool) error { return nil }
+func (a *Synthetic) GetTag() AttributeType                  { return SyntheticTag }
+func (a *Synthetic) Read(a io.Reader, _ ConstantPool) error { return nil }
 func (a *Synthetic) Dump(w io.Writer) error                 { return binary.Write(w, byteOrder, a) }
 
 // ClassFile, field_info, or method_info, may single
@@ -382,7 +382,7 @@ type Signature struct {
 }
 
 func (a *Signature) Signature() *Signature { return a }
-func (_ *Signature) GetTag() AttributeType { return SignatureTag }
+func (a *Signature) GetTag() AttributeType { return SignatureTag }
 
 func (a *Signature) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, &a.SignatureIndex)
@@ -397,7 +397,7 @@ type SourceFile struct {
 }
 
 func (a *SourceFile) SourceFile() *SourceFile { return a }
-func (_ *SourceFile) GetTag() AttributeType   { return SourceFileTag }
+func (a *SourceFile) GetTag() AttributeType   { return SourceFileTag }
 
 func (a *SourceFile) Read(r io.Reader, _ ConstantPool) error {
 	return binary.Read(r, byteOrder, &a.SourceFileIndex)
@@ -412,7 +412,7 @@ type SourceDebugExtension struct {
 }
 
 func (a *SourceDebugExtension) SourceDebugExtension() *SourceDebugExtension { return a }
-func (_ *SourceDebugExtension) GetTag() AttributeType                       { return SourceDebugExtensionTag }
+func (a *SourceDebugExtension) GetTag() AttributeType                       { return SourceDebugExtensionTag }
 
 func (a *SourceDebugExtension) Read(r io.Reader, _ ConstantPool) error {
 	var err error
@@ -455,7 +455,7 @@ type LineNumber struct {
 }
 
 func (a *LineNumberTable) LineNumberTable() *LineNumberTable { return a }
-func (_ *LineNumberTable) GetTag() AttributeType             { return LineNumberTableTag }
+func (a *LineNumberTable) GetTag() AttributeType             { return LineNumberTableTag }
 
 func (a *LineNumberTable) Read(r io.Reader, _ ConstantPool) error {
 	var linesCount uint16
@@ -492,7 +492,7 @@ type LocalVariable struct {
 }
 
 func (a *LocalVariableTable) LocalVariableTable() *LocalVariableTable { return a }
-func (_ *LocalVariableTable) GetTag() AttributeType                   { return LocalVariableTableTag }
+func (a *LocalVariableTable) GetTag() AttributeType                   { return LocalVariableTableTag }
 
 func (a *LocalVariableTable) Read(r io.Reader, _ ConstantPool) error {
 	var varsCount uint16
@@ -529,7 +529,7 @@ type LocalVariableType struct {
 }
 
 func (a *LocalVariableTypeTable) LocalVariableTypeTable() *LocalVariableTypeTable { return a }
-func (_ *LocalVariableTypeTable) GetTag() AttributeType                           { return LocalVariableTypeTableTag }
+func (a *LocalVariableTypeTable) GetTag() AttributeType                           { return LocalVariableTypeTableTag }
 
 func (a *LocalVariableTypeTable) Read(r io.Reader, _ ConstantPool) error {
 	var varsCount uint16
@@ -554,8 +554,8 @@ func (a *LocalVariableTypeTable) Dump(w io.Writer) error {
 type Deprecated struct{ baseAttribute }
 
 func (a *Deprecated) Deprecated() *Deprecated                { return a }
-func (_ *Deprecated) GetTag() AttributeType                  { return DeprecatedTag }
-func (_ *Deprecated) Read(r io.Reader, _ ConstantPool) error { return nil }
+func (a *Deprecated) GetTag() AttributeType                  { return DeprecatedTag }
+func (a *Deprecated) Read(r io.Reader, _ ConstantPool) error { return nil }
 func (a *Deprecated) Dump(w io.Writer) error                 { return binary.Write(w, byteOrder, a) }
 
 type RuntimeVisibleAnnotations struct {
@@ -563,7 +563,7 @@ type RuntimeVisibleAnnotations struct {
 }
 
 func (a *RuntimeVisibleAnnotations) RuntimeVisibleAnnotations() *RuntimeVisibleAnnotations { return a }
-func (_ *RuntimeVisibleAnnotations) GetTag() AttributeType                                 { return RuntimeVisibleAnnotationsTag }
+func (a *RuntimeVisibleAnnotations) GetTag() AttributeType                                 { return RuntimeVisibleAnnotationsTag }
 
 type RuntimeInvisibleAnnotations struct {
 	baseAttribute
@@ -572,7 +572,7 @@ type RuntimeInvisibleAnnotations struct {
 func (a *RuntimeInvisibleAnnotations) RuntimeInvisibleAnnotations() *RuntimeInvisibleAnnotations {
 	return a
 }
-func (_ *RuntimeInvisibleAnnotations) GetTag() AttributeType { return RuntimeInvisibleAnnotationsTag }
+func (a *RuntimeInvisibleAnnotations) GetTag() AttributeType { return RuntimeInvisibleAnnotationsTag }
 
 type RuntimeVisibleParameterAnnotations struct {
 	baseAttribute
@@ -581,7 +581,7 @@ type RuntimeVisibleParameterAnnotations struct {
 func (a *RuntimeVisibleParameterAnnotations) RuntimeVisibleParameterAnnotations() *RuntimeVisibleParameterAnnotations {
 	return a
 }
-func (_ *RuntimeVisibleParameterAnnotations) GetTag() AttributeType {
+func (a *RuntimeVisibleParameterAnnotations) GetTag() AttributeType {
 	return RuntimeVisibleParameterAnnotationsTag
 }
 
@@ -592,7 +592,7 @@ type RuntimeInvisibleParameterAnnotations struct {
 func (a *RuntimeInvisibleParameterAnnotations) RuntimeInvisibleParameterAnnotations() *RuntimeInvisibleParameterAnnotations {
 	return a
 }
-func (_ *RuntimeInvisibleParameterAnnotations) GetTag() AttributeType {
+func (a *RuntimeInvisibleParameterAnnotations) GetTag() AttributeType {
 	return RuntimeInvisibleParameterAnnotationsTag
 }
 
@@ -601,7 +601,7 @@ type AnnotationDefault struct {
 }
 
 func (a *AnnotationDefault) AnnotationDefault() *AnnotationDefault { return a }
-func (_ *AnnotationDefault) GetTag() AttributeType                 { return AnnotationDefaultTag }
+func (a *AnnotationDefault) GetTag() AttributeType                 { return AnnotationDefaultTag }
 
 // ClassFile, may single
 // iff constpool conatains CONSTANT_InvokeDynamic_info
@@ -616,7 +616,7 @@ type BootstrapMethod struct {
 }
 
 func (a *BootstrapMethods) BootstrapMethods() *BootstrapMethods { return a }
-func (_ *BootstrapMethods) GetTag() AttributeType               { return BootstrapMethodsTag }
+func (a *BootstrapMethods) GetTag() AttributeType               { return BootstrapMethodsTag }
 
 func (a *BootstrapMethods) Read(r io.Reader, _ ConstantPool) error {
 	var methodsCount uint16

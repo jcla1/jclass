@@ -186,22 +186,22 @@ func (b baseConstant) GetTag() ConstantType {
 	return b.Tag
 }
 
-func (_ baseConstant) Class() *ClassRef   { panic("jclass: constant is not Class") }
-func (_ baseConstant) Field() *FieldRef   { panic("jclass: constant is not Field") }
-func (_ baseConstant) Method() *MethodRef { panic("jclass: constant is not Method") }
-func (_ baseConstant) InterfaceMethod() *InterfaceMethodRef {
+func (b baseConstant) Class() *ClassRef   { panic("jclass: constant is not Class") }
+func (b baseConstant) Field() *FieldRef   { panic("jclass: constant is not Field") }
+func (b baseConstant) Method() *MethodRef { panic("jclass: constant is not Method") }
+func (b baseConstant) InterfaceMethod() *InterfaceMethodRef {
 	panic("jclass: constant is not InterfaceMethod")
 }
-func (_ baseConstant) StringRef() *StringRef          { panic("jclass: constant is not StringRef") }
-func (_ baseConstant) Integer() *IntegerRef           { panic("jclass: constant is not Integer") }
-func (_ baseConstant) Float() *FloatRef               { panic("jclass: constant is not Float") }
-func (_ baseConstant) Long() *LongRef                 { panic("jclass: constant is not Long") }
-func (_ baseConstant) Double() *DoubleRef             { panic("jclass: constant is not Double") }
-func (_ baseConstant) NameAndType() *NameAndTypeRef   { panic("jclass: constant is not NameAndType") }
-func (_ baseConstant) UTF8() *UTF8Ref                 { panic("jclass: constant is not UTF8") }
-func (_ baseConstant) MethodHandle() *MethodHandleRef { panic("jclass: constant is not MethodHandle") }
-func (_ baseConstant) MethodType() *MethodTypeRef     { panic("jclass: constant is not MethodType") }
-func (_ baseConstant) InvokeDynamic() *InvokeDynamicRef {
+func (b baseConstant) StringRef() *StringRef          { panic("jclass: constant is not StringRef") }
+func (b baseConstant) Integer() *IntegerRef           { panic("jclass: constant is not Integer") }
+func (b baseConstant) Float() *FloatRef               { panic("jclass: constant is not Float") }
+func (b baseConstant) Long() *LongRef                 { panic("jclass: constant is not Long") }
+func (b baseConstant) Double() *DoubleRef             { panic("jclass: constant is not Double") }
+func (b baseConstant) NameAndType() *NameAndTypeRef   { panic("jclass: constant is not NameAndType") }
+func (b baseConstant) UTF8() *UTF8Ref                 { panic("jclass: constant is not UTF8") }
+func (b baseConstant) MethodHandle() *MethodHandleRef { panic("jclass: constant is not MethodHandle") }
+func (b baseConstant) MethodType() *MethodTypeRef     { panic("jclass: constant is not MethodType") }
+func (b baseConstant) InvokeDynamic() *InvokeDynamicRef {
 	panic("jclass: constant is not InvokeDynamic")
 }
 
