@@ -165,8 +165,23 @@ type Constant interface {
 	InvokeDynamic() *InvokeDynamicRef
 }
 
+// Describes a set of attributes as you would find them in a
+// ClassFile, Method, Field or Code struct.
 type Attributes []Attribute
+
+// Every (valid) class will have a constant pool in which it
+// stores constants refrenced in the rest of the class file.
 type ConstantPool []Constant
 
+// Index into the/a constant pool. This type is used so that
+// you know, when a uint16 is actually an index.
 type ConstPoolIndex uint16
+
+// AccessFlags are a mask of flags that can determine things
+// like access privileges, cache options or implementation
+// details. There is no seperate type for each access flag
+// (i.e. for nested classes, methods, fields, etc.), but
+// each of those seperate types there are different constants
+// describing those access flags. See METHOD_ACC_*, FIELD_ACC_*
+// CLASS_ACC_*, and NESTED_CLASS_ACC_*.
 type AccessFlags uint16
